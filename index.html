@@ -171,6 +171,9 @@ footer button{background:var(--card);border-radius:9px;padding:8px 13px;font-siz
   <h2 class="sec">La fábrica <span class="n" id="nag">0</span></h2>
   <div id="tablero"></div>
 
+  <h2 class="sec">Tus robots <span class="n" id="nro">0</span></h2>
+  <div id="robots"></div>
+
   <h2 class="sec">Lo que se está hablando <span class="n" id="nhi">0</span></h2>
   <div id="hilos"></div>
 </main>
@@ -228,8 +231,10 @@ footer button{background:var(--card);border-radius:9px;padding:8px 13px;font-siz
    ═══════════════════════════════════════════════════════════════ */
 
 const APP_KEY = "r3h126l6fo7ppkx";
-const F_ESTADO = "/estado.json";
-const F_BUZON  = "/buzon.json";
+const F_ESTADO  = "/estado.json";
+const F_BUZON   = "/buzon.json";
+const F_ROBOTS  = "/robots.json";     // lo escribe el puente del ordenador
+const F_ORDENES = "/ordenes.json";    // lo escribimos nosotros: el mando
 const LS = "oficina.v1";
 
 /* ── estado en memoria ───────────────────────────────────────── */
@@ -247,13 +252,13 @@ let S = {
    segundo. Orden suya del 09/08: "que todo sea muy rapido". */
 const CACHE = "oficina.cache.v1";
 function guardarCache(){
-  try{ localStorage.setItem(CACHE, JSON.stringify({estado:S.estado, buzon:S.buzon})); }catch(e){}
+  try{ localStorage.setItem(CACHE, JSON.stringify({estado:S.estado, buzon:S.buzon, robots:S.robots})); }catch(e){}
 }
 function cargarCache(){
   try{
     const j = JSON.parse(localStorage.getItem(CACHE)||"null");
     if(!j || !j.estado) return false;
-    S.estado = j.estado; S.buzon = j.buzon || buzonVacio();
+    S.estado = j.estado; S.buzon = j.buzon || buzonVacio(); S.robots = j.robots || null;
     return true;                 // las revisiones NO se cachean: son del servidor
   }catch(e){ return false; }
 }
@@ -303,6 +308,12 @@ async function conectar(){
   u.searchParams.set("code_challenge", await reto(v));
   u.searchParams.set("code_challenge_method","S256");
   u.searchParams.set("token_access_type","offline");   // ← da refresh_token
+  // Los permisos se PIDEN aqui. Si no se piden, Dropbox da un permiso con lo
+  // que tenga marcado la app, y si le falta algo el fallo no aparece hasta la
+  // primera lectura, disfrazado de "permiso caducado" para siempre. Pidiendolos
+  // aqui, o funciona, o Dropbox lo dice EN SU PANTALLA, que si se puede
+  // arreglar. Vacuna V-085.
+  u.searchParams.set("scope","files.content.read files.content.write");
   u.searchParams.set("redirect_uri", redirectURI());
   location.href = u.toString();
 }
@@ -373,8 +384,18 @@ async function fallo(r){
   // como caducado y conPermiso() pide otro permiso y REPITE la peticion en el
   // acto. Antes salia "Renovando el permiso... un momento" y el 09/08 dijo que
   // no entendia por que tenia que perder tiempo en eso. V-083 + V-084.
-  if(r.status===401) { S.tok=null; S.exp=0; const e=new Error("permiso caducado"); e.caducado=true; return e; }
+  if(r.status===401) { S.tok=null; S.exp=0; const e=new Error(porQue401(t)); e.caducado=true; return e; }
   return new Error("Dropbox " + r.status + (t ? ": " + t.slice(0,180) : ""));
+}
+
+// Un 401 que se repite NO es que el permiso caduque: es que le falta algo a la
+// app, casi siempre los dos permisos de archivos sin marcar. Decirle "permiso
+// caducado" no le deja arreglar nada, y el 09/08 lo vio una y otra vez. V-085.
+function porQue401(t){
+  if(/missing_scope/i.test(t))
+    return "Tu app de Dropbox no tiene marcados los permisos de archivos. Toca ⚙: ahí están los dos pasos.";
+  if(/expired_access_token/i.test(t)) return "Pidiendo permiso otra vez…";
+  return "Dropbox no aceptó el permiso" + (t ? ": " + t.slice(0,120) : "") + ". Toca ⚙ y conecta otra vez.";
 }
 
 /** Si el permiso se agoto a mitad, se renueva y se repite. En silencio. */
@@ -383,7 +404,7 @@ async function conPermiso(fn){
   catch(e){
     if(!e.caducado) throw e;
     await refrescar();
-    return await fn();
+    return await fn();     // si vuelve a fallar sale SU motivo, no "caducado"
   }
 }
 
@@ -450,10 +471,11 @@ function estadoVacio(){ return {v:1, actualizado:null, agentes:[], espera_de_ti:
 async function cargar(){
   if(S.demo){ pintar(); return; }
   const t0 = (window.performance ? performance.now() : Date.now());
-  const [e,b] = await Promise.all([bajar(F_ESTADO), bajar(F_BUZON)]);
+  const [e,b,rb] = await Promise.all([bajar(F_ESTADO), bajar(F_BUZON), bajar(F_ROBOTS)]);
   S.ms = Math.round((window.performance ? performance.now() : Date.now()) - t0);
   S.estado = e.datos || estadoVacio(); S.revEstado = e.rev;
   S.buzon  = b.datos || buzonVacio();  S.revBuzon  = b.rev;
+  S.robots = rb.datos;                                  // null = puente cerrado
   if(!b.datos) S.revBuzon = await subir(F_BUZON, S.buzon, null);  // primera vez
   guardarCache(); pintar();
 }
@@ -523,6 +545,7 @@ function pintar(){
   // Cuanto tardo en verse algo desde que abrio la pagina. Se mide una sola vez.
   if(!S.msPrimero && window.performance) S.msPrimero = Math.round(performance.now());
   pintarTablero();
+  pintarRobots();
   pintarHilos();
   const p=$("#pill");
   p.textContent = S.demo ? "EJEMPLO" : (S.tok||S.ref ? "EN VIVO" : "SIN CONECTAR");
@@ -572,6 +595,64 @@ function pintarTablero(){
     }
     d.appendChild(b); c.appendChild(d);
   });
+}
+
+/* ── TUS ROBOTS: el mismo panel del ordenador, en el movil ───────
+   Lo escribe puente_oficina.js. Al tocar uno se apunta la orden en
+   ordenes.json y el ordenador la hace. Sin agentes de por medio:
+   orden suya del 09/08, "sin ninguna gente que haga de
+   intermediario". */
+function pintarRobots(){
+  const c = $("#robots"); c.innerHTML = "";
+  const r = S.robots;
+  const grupos = (r && r.grupos) || [];
+  $("#nro").textContent = grupos.reduce((s,g)=> s + g.robots.length, 0);
+
+  if(!r){
+    const v = el("div","vacio",
+      "Para mandar en tus robots desde aquí, abre una vez en el ordenador «El móvil manda en los robots» "+
+      "(está en el Escritorio, en ROBOTS › 3 - HERRAMIENTAS) y déjalo abierto.");
+    c.appendChild(v); return;
+  }
+  // Lo que contesto el ordenador a lo ultimo que pulso.
+  ((r.hechas)||[]).slice(0,3).forEach(h=>{
+    const d = el("div","ag");
+    d.style.borderColor = h.ok ? "var(--ok, #2e7d32)" : "var(--bad)";
+    const b = el("div","b");
+    b.appendChild(el("div","t", (h.ok?"✓ ":"✕ ") + esc(h.texto)));
+    if(h.ts) b.appendChild(el("div","m", cuando(h.ts)));
+    d.appendChild(b); c.appendChild(d);
+  });
+
+  grupos.forEach(g=>{
+    c.appendChild(el("div","lab", esc(g.grupo)));
+    g.robots.forEach(x=>{
+      const d = el("div","ag");
+      const b = el("div","b");
+      b.appendChild(el("div","t", esc(x.nombre)));
+      if(x.abierto) b.appendChild(el("div","q","abierto "+cuando(x.desde)));
+      const acc = el("div","hacc");
+      const bt = el("button", x.abierto?"fin":null, x.abierto ? "Cerrar" : "Abrir");
+      bt.onclick = ()=>{ bt.disabled=true; mandarRobot(x.id, x.abierto?"cerrar":"abrir", x.nombre); };
+      acc.appendChild(bt); b.appendChild(acc);
+      d.appendChild(b); c.appendChild(d);
+    });
+  });
+}
+
+async function mandarRobot(id, que, nombre){
+  if(S.demo){ toast("Esto es el ejemplo: conecta para mandar de verdad"); return; }
+  try{
+    const o = await bajar(F_ORDENES);
+    const datos = o.datos || {v:1, ordenes:[]};
+    // Solo las ultimas: esto es un mando, no un historial que crezca.
+    datos.ordenes = (datos.ordenes||[]).slice(-9);
+    datos.ordenes.push({ id: idCorto("O-"), robot: id, que, ts: ahora() });
+    datos.actualizado = ahora();
+    await subir(F_ORDENES, datos, o.rev);
+    toast((que==="abrir"?"Abriendo ":"Cerrando ") + nombre + "…");
+    setTimeout(()=> cargar().catch(()=>{}), 3500);   // el puente mira cada 3 s
+  }catch(e){ toast(e.message, true); pintar(); }
 }
 
 function pintarHilos(){
