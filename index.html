@@ -240,7 +240,7 @@ textarea{resize:vertical;min-height:92px}
 /* ═══════════════════════════════════════════════════════════════
    LA OFICINA · Swallow's Office
    Los datos viven en el Dropbox del dueño, en Apps/Swallow's Office:
-     estado.json   lo escriben los agentes (actualizar_oficina.js)
+     estado.json   lo rehace el puente cada 15 s (actualizar_oficina.js)
      buzon.json    los hilos, en los dos sentidos
      robots.json   lo escribe el puente del ordenador
      ordenes.json  lo escribe ESTA página: es el mando
@@ -561,9 +561,17 @@ function pintar(){
   pintarCfg();
   pintarNav();
   const act = S.estado && S.estado.actualizado;
+  // Un tablero PARADO se parece a uno tranquilo: las mismas caras, los mismos
+  // números. El puente lo rehace cada 15 s, así que si lleva más de 5 minutos
+  // sin cambiar es que esa ventana no está abierta en el ordenador — y eso hay
+  // que decirlo con palabras, o se cree que lo que ve es de ahora mismo.
+  const paradoMin = act ? (Date.now()-new Date(act).getTime())/60000 : 0;
   $("#marca").textContent = S.demo ? "ejemplo" : (S.tok||S.ref ? "en vivo" : "sin conectar");
   $("#sub").textContent = S.demo ? "datos de ejemplo"
-      : (act ? "la fábrica, "+cuando(act)+(S.ms?" · "+S.ms+" ms":"") : "esperando a los agentes");
+      : (act ? (paradoMin > 5
+                  ? "PARADO "+cuando(act)+" · abre el puente en el ordenador"
+                  : "la fábrica, "+cuando(act)+(S.ms?" · "+S.ms+" ms":""))
+             : "esperando a los agentes");
 }
 
 function pintarEspera(){
