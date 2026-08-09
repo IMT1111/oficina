@@ -63,6 +63,10 @@ main{padding:16px 14px 30px;max-width:820px;margin:0 auto}
 .mini:last-child{margin-bottom:0}
 .mini .nm{font-size:15.5px;font-weight:600}
 .mini .est{color:var(--muted);font-size:13.5px;margin-top:2px;word-wrap:break-word}
+.mini.jefe{border-color:var(--acc)}
+.mini.jefe .nm{font-size:17px}
+.mini.hijo{margin-left:16px;border-left:3px solid var(--acc)}
+.mini .dentro{color:var(--muted);font-size:11.5px;margin-top:1px;opacity:.75}
 .mini .m{color:var(--muted);font-size:12px;margin-top:6px;display:flex;gap:12px;flex-wrap:wrap}
 .grupo{color:var(--muted);font-size:11.5px;letter-spacing:.6px;text-transform:uppercase;
   font-weight:700;margin:16px 0 8px}
@@ -636,10 +640,14 @@ function lista(sel, ls, vacio){
   const c = $(sel); c.innerHTML="";
   if(!ls.length){ c.appendChild(el("div","vacio", vacio)); return; }
   ls.forEach(a=>{
-    const d = el("div","mini");
+    // un modulo (a.padre) va METIDO debajo de su app, con una raya al lado:
+    // asi se ve de un vistazo que las doce piezas son de la misma app y no
+    // doce apps sueltas. La app manda la fila de arriba y va en grande.
+    const d = el("div","mini"+(a.padre ? " hijo" : (a.tipo==="constructor" ? " jefe" : "")));
     const t = el("div","nm"); t.appendChild(el("span","dot "+(a.estado||"parado")));
     t.appendChild(document.createTextNode(esc(a.nombre)));
     d.appendChild(t);
+    if(a.padre) d.appendChild(el("div","dentro", "una parte de "+esc(a.padre)));
     if(a.que) d.appendChild(el("div","est", esc(a.que)));
     const m = el("div","m");
     if(a.avance) m.appendChild(el("span",null,esc(a.avance)));
