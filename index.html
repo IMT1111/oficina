@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0e1526">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>La Oficina</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23e08a3e'/%3E%3Cpath d='M12 40c8-2 14-8 18-16 2 8 8 14 16 16-8 4-16 6-22 6-5 0-9-2-12-6z' fill='%230e1526'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#0e1526; --bg2:#121b31; --card:#17223d; --card2:#1d2949;
+  --line:#2a3a63; --txt:#e9eefb; --muted:#93a2c9;
+  --acc:#e08a3e; --acc2:#f5a95a; --ok:#5fd39a; --bad:#f07878; --warn:#f2c14e;
+  --r:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--txt);
+  font:16px/1.45 -apple-system,"Segoe UI",Roboto,system-ui,sans-serif;
+  padding:0 0 env(safe-area-inset-bottom);
+  overscroll-behavior-y:contain;
+}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+textarea,input{font:inherit;color:inherit}
+
+/* ---------- cabecera ---------- */
+header{
+  position:sticky;top:0;z-index:30;background:rgba(14,21,38,.93);
+  backdrop-filter:blur(10px); border-bottom:1px solid var(--line);
+  padding:calc(10px + env(safe-area-inset-top)) 14px 10px;
+  display:flex;align-items:center;gap:10px;
+}
+header .logo{width:30px;height:30px;border-radius:9px;background:var(--acc);flex:0 0 auto;
+  display:grid;place-items:center;font-size:17px}
+header h1{font-size:18px;margin:0;font-weight:650;letter-spacing:.2px;flex:1}
+header .st{font-size:11.5px;color:var(--muted);display:block;font-weight:400;letter-spacing:0}
+.iconbtn{width:38px;height:38px;border-radius:11px;background:var(--card);display:grid;place-items:center;font-size:17px}
+.iconbtn:active{background:var(--card2)}
+
+main{padding:14px 14px 90px;max-width:760px;margin:0 auto}
+
+/* ---------- dictar ---------- */
+#dictar{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px;margin-bottom:16px}
+#dictar .lab{font-size:11.5px;letter-spacing:.9px;text-transform:uppercase;color:var(--acc2);font-weight:700;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+#txt{width:100%;min-height:88px;background:var(--bg2);border:1px solid var(--line);border-radius:11px;
+  padding:11px 12px;resize:vertical;font-size:17px;line-height:1.4}
+#txt:focus{outline:none;border-color:var(--acc)}
+.row{display:flex;gap:9px;margin-top:9px;align-items:stretch}
+.btn{flex:1;background:var(--acc);color:#191100;font-weight:700;border-radius:11px;padding:13px;text-align:center;font-size:16px}
+.btn:active{background:var(--acc2)}
+.btn.ghost{flex:0 0 auto;background:var(--card2);color:var(--txt);font-weight:600;padding:13px 15px}
+.btn[disabled]{opacity:.45}
+#mic.on{background:var(--bad);color:#fff;animation:pulse 1.1s infinite}
+@keyframes pulse{50%{opacity:.55}}
+
+/* ---------- secciones ---------- */
+h2.sec{font-size:12px;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted);
+  margin:22px 4px 9px;font-weight:700;display:flex;align-items:center;gap:8px}
+h2.sec .n{background:var(--card2);color:var(--muted);border-radius:20px;padding:1px 8px;font-size:11px}
+
+/* ---------- tablero ---------- */
+.ag{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:11px 13px;margin-bottom:9px;
+  display:flex;gap:11px;align-items:flex-start}
+.dot{width:10px;height:10px;border-radius:50%;margin-top:6px;flex:0 0 auto;background:var(--muted)}
+.dot.va{background:var(--ok);box-shadow:0 0 0 4px rgba(95,211,154,.15)}
+.dot.atascado{background:var(--bad);box-shadow:0 0 0 4px rgba(240,120,120,.15)}
+.dot.parado{background:#5a6a92}
+.dot.espera{background:var(--warn);box-shadow:0 0 0 4px rgba(242,193,78,.15)}
+.ag .b{flex:1;min-width:0}
+.ag .t{font-weight:650;font-size:15.5px}
+.ag .q{color:var(--muted);font-size:14px;margin-top:2px;word-wrap:break-word}
+.ag .m{color:var(--muted);font-size:12px;margin-top:5px;display:flex;gap:10px;flex-wrap:wrap}
+.bar{height:5px;background:var(--bg2);border-radius:4px;overflow:hidden;margin-top:7px}
+.bar i{display:block;height:100%;background:var(--acc);border-radius:4px}
+
+/* ---------- hilos ---------- */
+.hilo{background:var(--card);border:1px solid var(--line);border-radius:var(--r);margin-bottom:10px;overflow:hidden}
+.hilo.cerrando{opacity:0;transform:scale(.96);transition:.35s}
+.hd{display:flex;align-items:center;gap:10px;padding:12px 13px}
+.hd .cid{font-size:10.5px;font-weight:700;letter-spacing:.5px;color:var(--acc2);background:rgba(224,138,62,.13);
+  border-radius:6px;padding:2px 6px;flex:0 0 auto}
+.hd .ht{flex:1;font-weight:600;font-size:15.5px;min-width:0}
+.hd .ch{color:var(--muted);font-size:13px;transition:transform .2s}
+.hilo.ab .hd .ch{transform:rotate(90deg)}
+.hd .unread{width:8px;height:8px;border-radius:50%;background:var(--acc);flex:0 0 auto}
+.body{display:none;padding:0 13px 13px;border-top:1px solid var(--line)}
+.hilo.ab .body{display:block}
+
+.msg{margin:11px 0;display:flex;flex-direction:column;max-width:88%}
+.msg .who{font-size:10.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.msg .bu{padding:9px 12px;border-radius:13px;font-size:15px;white-space:pre-wrap;word-wrap:break-word}
+.msg.cap .bu{background:var(--bg2);border:1px solid var(--line);border-top-left-radius:4px}
+.msg.yo{align-self:flex-end;align-items:flex-end}
+.msg.yo .bu{background:var(--acc);color:#191100;border-top-right-radius:4px}
+.msg .ts{font-size:10.5px;color:var(--muted);margin-top:3px}
+
+.preg{background:var(--bg2);border:1px solid var(--acc);border-radius:12px;padding:11px 12px;margin:11px 0}
+.preg .p{font-size:15px;margin-bottom:9px}
+.preg .ops{display:flex;gap:8px;flex-wrap:wrap}
+.preg .op{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-weight:600;flex:1;min-width:110px;text-align:center}
+.preg .op:active{background:var(--acc);color:#191100}
+
+.sub{border-left:2px solid var(--line);margin:10px 0 10px 4px;padding-left:11px}
+.sub .st{font-size:12.5px;color:var(--acc2);font-weight:700;letter-spacing:.4px;margin-bottom:2px}
+
+.hacc{display:flex;gap:8px;margin-top:12px}
+.hacc button{flex:1;background:var(--card2);border-radius:10px;padding:11px;font-size:14px;font-weight:600;color:var(--muted)}
+.hacc button.fin{color:var(--ok)}
+.hacc button:active{background:var(--line)}
+.resp{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:10px 11px;
+  min-height:56px;resize:vertical;font-size:16px;margin-top:10px}
+.resp:focus{outline:none;border-color:var(--acc)}
+
+.vacio{color:var(--muted);text-align:center;padding:26px 16px;font-size:14.5px;
+  background:var(--card);border:1px dashed var(--line);border-radius:var(--r)}
+
+/* ---------- panel conexion ---------- */
+#modal{position:fixed;inset:0;background:rgba(6,10,20,.82);z-index:60;display:none;
+  align-items:flex-end;justify-content:center;backdrop-filter:blur(3px)}
+#modal.on{display:flex}
+#modal .box{background:var(--card);border-top:2px solid var(--acc);border-radius:20px 20px 0 0;
+  width:100%;max-width:520px;padding:20px 18px calc(24px + env(safe-area-inset-bottom));max-height:88vh;overflow:auto}
+#modal h3{margin:0 0 4px;font-size:18px}
+#modal p{color:var(--muted);font-size:14px;margin:6px 0 14px}
+#modal .fila{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+#modal .fila b{font-weight:600}
+#modal .fila span{color:var(--muted);font-size:13.5px;text-align:right;max-width:60%;word-break:break-all}
+
+/* ---------- aviso ---------- */
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(120px);
+  background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:11px 17px;font-size:14.5px;
+  z-index:80;transition:.3s;box-shadow:0 8px 26px rgba(0,0,0,.5);max-width:92vw;text-align:center}
+#toast.on{transform:translateX(-50%) translateY(0)}
+#toast.err{border-color:var(--bad);color:#ffd7d7}
+
+/* ---------- pie ---------- */
+footer{position:fixed;left:0;right:0;bottom:0;z-index:25;
+  background:rgba(14,21,38,.94);backdrop-filter:blur(10px);border-top:1px solid var(--line);
+  padding:8px 14px calc(8px + env(safe-area-inset-bottom));display:flex;gap:9px;align-items:center;font-size:12.5px;color:var(--muted)}
+footer .sp{flex:1}
+footer button{background:var(--card);border-radius:9px;padding:8px 13px;font-size:13px;font-weight:600}
+.pill{border-radius:20px;padding:3px 9px;font-size:11.5px;font-weight:700;letter-spacing:.4px}
+.pill.demo{background:rgba(242,193,78,.16);color:var(--warn)}
+.pill.viva{background:rgba(95,211,154,.15);color:var(--ok)}
+.pill.off{background:rgba(240,120,120,.15);color:var(--bad)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🐦</div>
+  <h1>La Oficina<span class="st" id="sub">cargando…</span></h1>
+  <button class="iconbtn" id="brec" title="Actualizar">⟳</button>
+  <button class="iconbtn" id="bcfg" title="Conexión">⚙</button>
+</header>
+
+<main>
+  <section id="dictar">
+    <div class="lab"><span>Dicta aquí</span><span id="pill" class="pill demo">DEMO</span></div>
+    <textarea id="txt" placeholder="Toca el micro del teclado y habla. Lo que digas le llega al capataz."></textarea>
+    <div class="row">
+      <button class="btn ghost" id="mic" title="Dictar">🎤</button>
+      <button class="btn" id="env">Enviar al capataz</button>
+    </div>
+  </section>
+
+  <h2 class="sec">La fábrica <span class="n" id="nag">0</span></h2>
+  <div id="tablero"></div>
+
+  <h2 class="sec">Lo que se está hablando <span class="n" id="nhi">0</span></h2>
+  <div id="hilos"></div>
+</main>
+
+<footer>
+  <span id="pie">—</span><span class="sp"></span>
+  <button id="bnuevo">+ Tema nuevo</button>
+</footer>
+
+<div id="modal"><div class="box">
+  <h3>Conexión</h3>
+  <p>La Oficina guarda todo en tu propio Dropbox. Nadie más lo ve.</p>
+  <div id="cfg"></div>
+  <div class="row" style="margin-top:16px">
+    <button class="btn" id="bconn">Conectar con Dropbox</button>
+  </div>
+  <div class="row">
+    <button class="btn ghost" style="flex:1" id="bdemo">Ver ejemplo (sin conectar)</button>
+    <button class="btn ghost" style="flex:1" id="bcerrar">Cerrar</button>
+  </div>
+</div></div>
+
+<div id="toast"></div>
+
+<script>
+"use strict";
+/* ═══════════════════════════════════════════════════════════════
+   LA OFICINA · Swallow's Office
+   Una sola página. Los datos viven en el Dropbox del dueño,
+   en la carpeta de la app:  Apps/Swallow's Office/
+   Archivos:  estado.json  (lo escriben los agentes)
+              buzon.json   (hilos, en los dos sentidos)
+   Sin librerías. OAuth PKCE (sin app secret).
+   ═══════════════════════════════════════════════════════════════ */
+
+const APP_KEY = "r3h126l6fo7ppkx";
+const F_ESTADO = "/estado.json";
+const F_BUZON  = "/buzon.json";
+const LS = "oficina.v1";
+
+/* ── estado en memoria ───────────────────────────────────────── */
+let S = {
+  tok:null, ref:null, exp:0,      // token de acceso, de refresco, caducidad
+  demo:false, estado:null, buzon:null,
+  revEstado:null, revBuzon:null,
+  abiertos:{},                    // hilos desplegados
+};
+
+/* ── utilidades ──────────────────────────────────────────────── */
+const $  = s => document.querySelector(s);
+const el = (t,c,x) => { const e=document.createElement(t); if(c)e.className=c; if(x!=null)e.textContent=x; return e; };
+const esc = s => String(s==null?"":s);
+const ahora = () => new Date().toISOString();
+
+function toast(m, err){
+  const t=$("#toast"); t.textContent=m; t.className = "on"+(err?" err":"");
+  clearTimeout(toast._t); toast._t=setTimeout(()=>t.className="",err?4200:2300);
+}
+function cuando(iso){
+  if(!iso) return "";
+  const d=new Date(iso), m=Math.floor((Date.now()-d.getTime())/60000);
+  if(isNaN(m)) return "";
+  if(m<1) return "ahora"; if(m<60) return "hace "+m+" min";
+  const h=Math.floor(m/60); if(h<24) return "hace "+h+" h";
+  const dd=Math.floor(h/24); return dd===1?"ayer":"hace "+dd+" días";
+}
+function idCorto(p){ return p + Math.random().toString(36).slice(2,6); }
+
+/* ═══ 1 · OAUTH PKCE ══════════════════════════════════════════ */
+function b64url(buf){
+  return btoa(String.fromCharCode(...new Uint8Array(buf)))
+    .replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+}
+async function reto(v){ return b64url(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(v))); }
+function verificador(){
+  const a=new Uint8Array(48); crypto.getRandomValues(a); return b64url(a);
+}
+function redirectURI(){ return location.origin + location.pathname; }
+
+async function conectar(){
+  const v = verificador();
+  sessionStorage.setItem("pkce", v);
+  const u = new URL("https://www.dropbox.com/oauth2/authorize");
+  u.searchParams.set("client_id", APP_KEY);
+  u.searchParams.set("response_type","code");
+  u.searchParams.set("code_challenge", await reto(v));
+  u.searchParams.set("code_challenge_method","S256");
+  u.searchParams.set("token_access_type","offline");   // ← da refresh_token
+  u.searchParams.set("redirect_uri", redirectURI());
+  location.href = u.toString();
+}
+
+async function canjear(code){
+  const v = sessionStorage.getItem("pkce");
+  if(!v) throw new Error("Falta el código de seguridad. Vuelve a conectar.");
+  const body = new URLSearchParams({
+    grant_type:"authorization_code", code, code_verifier:v,
+    client_id:APP_KEY, redirect_uri:redirectURI()
+  });
+  const r = await fetch("https://api.dropboxapi.com/oauth2/token", {method:"POST", body});
+  const j = await r.json();
+  if(!r.ok) throw new Error(j.error_description || j.error || "No se pudo conectar");
+  S.tok=j.access_token; S.ref=j.refresh_token||S.ref; S.exp=Date.now()+(j.expires_in-120)*1000;
+  sessionStorage.removeItem("pkce"); guardarSesion();
+}
+
+async function refrescar(){
+  if(!S.ref) throw new Error("Sesión caducada. Toca ⚙ y conecta otra vez.");
+  const body = new URLSearchParams({grant_type:"refresh_token", refresh_token:S.ref, client_id:APP_KEY});
+  const r = await fetch("https://api.dropboxapi.com/oauth2/token",{method:"POST", body});
+  const j = await r.json();
+  if(!r.ok) throw new Error("Sesión caducada. Toca ⚙ y conecta otra vez.");
+  S.tok=j.access_token; S.exp=Date.now()+(j.expires_in-120)*1000; guardarSesion();
+}
+async function token(){
+  if(!S.tok || Date.now()>S.exp) await refrescar();
+  return S.tok;
+}
+function guardarSesion(){
+  localStorage.setItem(LS, JSON.stringify({ref:S.ref, tok:S.tok, exp:S.exp}));
+}
+function cargarSesion(){
+  try{ const j=JSON.parse(localStorage.getItem(LS)||"{}");
+       S.ref=j.ref||null; S.tok=j.tok||null; S.exp=j.exp||0; }catch(e){}
+}
+function desconectar(){ localStorage.removeItem(LS); S.tok=S.ref=null; S.exp=0; location.reload(); }
+
+/* ═══ 2 · API DE DROPBOX SIN PREFLIGHT ════════════════════════
+   Los headers propios (Authorization, Dropbox-API-Arg) disparan
+   una petición OPTIONS que Dropbox rechaza. Por eso van como
+   parámetros de URL, con reject_cors_preflight=true y el
+   Content-Type "simple" que Dropbox documenta para esto.
+   ════════════════════════════════════════════════════════════ */
+const CT = "text/plain; charset=dropbox-cors-hack";
+function asciiJSON(o){                       // el arg debe ir en ASCII puro
+  return JSON.stringify(o).replace(/[^\x00-\x7F]/g,
+    c => "\\u" + c.charCodeAt(0).toString(16).padStart(4,"0"));
+}
+function urlCors(base, arg, tok){
+  return base + "?reject_cors_preflight=true&authorization=" +
+    encodeURIComponent("Bearer "+tok) + "&arg=" + encodeURIComponent(asciiJSON(arg));
+}
+async function fallo(r){
+  const t = await r.text().catch(()=> "");
+  if(r.status===401) { S.tok=null; return new Error("Sesión caducada. Toca ⚙ y conecta otra vez."); }
+  return new Error("Dropbox " + r.status + (t ? ": " + t.slice(0,180) : ""));
+}
+
+/** Lee un JSON. Devuelve {datos, rev} o {datos:null} si no existe todavía. */
+async function bajar(ruta){
+  const tk = await token();
+  const r = await fetch(urlCors("https://content.dropboxapi.com/2/files/download",{path:ruta},tk),
+                        {method:"POST", headers:{"Content-Type":CT}});
+  if(r.status===409) return {datos:null, rev:null};        // path/not_found
+  if(!r.ok) throw await fallo(r);
+  let meta={}; try{ meta = JSON.parse(r.headers.get("dropbox-api-result")||"{}"); }catch(e){}
+  const txt = await r.text();
+  let datos=null; try{ datos = JSON.parse(txt); }catch(e){ throw new Error("El archivo "+ruta+" está corrupto"); }
+  return {datos, rev: meta.rev||null};
+}
+
+/** Escribe un JSON. Con rev usa modo update: si otro escribió antes, falla y reintentamos. */
+async function subir(ruta, datos, rev){
+  const tk = await token();
+  const arg = {
+    path: ruta, mute: true, autorename: false,
+    mode: rev ? {".tag":"update", update:rev} : {".tag":"overwrite"}
+  };
+  const r = await fetch(urlCors("https://content.dropboxapi.com/2/files/upload",arg,tk),
+                        {method:"POST", headers:{"Content-Type":CT},
+                         body: JSON.stringify(datos,null,1)});
+  if(r.status===409){ const e=new Error("conflicto"); e.conflicto=true; throw e; }
+  if(!r.ok) throw await fallo(r);
+  const j = await r.json();
+  return j.rev;
+}
+
+/** Cambia el buzón a prueba de choques con los agentes: relee, aplica y reintenta. */
+async function editarBuzon(cambio){
+  if(S.demo){ cambio(S.buzon); pintar(); return; }
+  for(let i=0;i<4;i++){
+    try{
+      cambio(S.buzon);
+      S.buzon.actualizado = ahora();
+      S.revBuzon = await subir(F_BUZON, S.buzon, S.revBuzon);
+      return;
+    }catch(e){
+      if(!e.conflicto) throw e;
+      const b = await bajar(F_BUZON);            // otro escribió: recargo y repito
+      S.buzon = b.datos || buzonVacio(); S.revBuzon = b.rev;
+      pintar();
+    }
+  }
+  throw new Error("El capataz está escribiendo justo ahora. Inténtalo otra vez.");
+}
+
+/* ═══ 3 · LOS DATOS ═══════════════════════════════════════════ */
+function buzonVacio(){ return {v:1, actualizado:ahora(), hilos:[]}; }
+function estadoVacio(){ return {v:1, actualizado:null, agentes:[], espera_de_ti:[]}; }
+
+async function cargar(){
+  if(S.demo){ pintar(); return; }
+  $("#sub").textContent = "leyendo tu Dropbox…";
+  const [e,b] = await Promise.all([bajar(F_ESTADO), bajar(F_BUZON)]);
+  S.estado = e.datos || estadoVacio(); S.revEstado = e.rev;
+  S.buzon  = b.datos || buzonVacio();  S.revBuzon  = b.rev;
+  if(!b.datos) S.revBuzon = await subir(F_BUZON, S.buzon, null);  // primera vez
+  pintar();
+}
+
+/* ═══ 4 · ACCIONES DEL DUEÑO ══════════════════════════════════ */
+async function enviar(){
+  const t = $("#txt").value.trim();
+  if(!t){ toast("Escribe o dicta algo primero"); return; }
+  $("#env").disabled = true;
+  try{
+    await editarBuzon(bz=>{
+      bz.hilos.unshift({
+        id: idCorto("T-"), titulo: titulo(t), de:"dueno", estado:"abierto",
+        creado: ahora(), nuevo_para_agente:true,
+        mensajes:[{de:"dueno", texto:t, ts:ahora()}], subhilos:[]
+      });
+    });
+    $("#txt").value=""; pintar(); toast("Enviado al capataz ✓");
+  }catch(e){ toast(e.message, true); }
+  $("#env").disabled = false;
+}
+function titulo(t){
+  const l = t.replace(/\s+/g," ").trim();
+  return l.length<=46 ? l : l.slice(0,44).replace(/\s\S*$/,"")+"…";
+}
+
+async function responder(hid, texto, sid){
+  if(!texto.trim()) return;
+  await editarBuzon(bz=>{
+    const h = buscarHilo(bz, hid, sid);
+    if(!h) return;
+    h.mensajes.push({de:"dueno", texto:texto.trim(), ts:ahora()});
+    h.nuevo_para_agente = true; h.leido_por_dueno = true;
+  });
+  pintar(); toast("Respondido ✓");
+}
+async function contestarPregunta(hid, sid, op){
+  await editarBuzon(bz=>{
+    const h = buscarHilo(bz, hid, sid); if(!h||!h.pregunta) return;
+    h.pregunta.respuesta = op; h.pregunta.respondida = ahora();
+    h.mensajes.push({de:"dueno", texto:op, ts:ahora()});
+    h.nuevo_para_agente = true;
+  });
+  pintar(); toast("Elegido: "+op);
+}
+async function cerrarHilo(hid, sid){
+  const nodo = document.getElementById("h_"+(sid||hid));
+  if(nodo) nodo.classList.add("cerrando");
+  await editarBuzon(bz=>{
+    if(sid){
+      const h = bz.hilos.find(x=>x.id===hid);
+      if(h) h.subhilos = (h.subhilos||[]).filter(s=>s.id!==sid);
+    }else{
+      bz.hilos = bz.hilos.filter(x=>x.id!==hid);
+    }
+  });
+  setTimeout(pintar, 320); toast("Terminado, fuera de la lista");
+}
+function buscarHilo(bz, hid, sid){
+  const h = bz.hilos.find(x=>x.id===hid); if(!h) return null;
+  if(!sid) return h;
+  return (h.subhilos||[]).find(s=>s.id===sid) || null;
+}
+
+/* ═══ 5 · PINTAR ══════════════════════════════════════════════ */
+function pintar(){
+  pintarTablero();
+  pintarHilos();
+  const p=$("#pill");
+  p.textContent = S.demo ? "EJEMPLO" : (S.tok||S.ref ? "EN VIVO" : "SIN CONECTAR");
+  p.className = "pill " + (S.demo?"demo":(S.tok||S.ref?"viva":"off"));
+  const act = S.estado && S.estado.actualizado;
+  $("#sub").textContent = S.demo ? "datos de ejemplo"
+      : (act ? "la fábrica, "+cuando(act) : "esperando a los agentes");
+}
+
+function pintarTablero(){
+  const c = $("#tablero"); c.innerHTML="";
+  const ags = (S.estado && S.estado.agentes) || [];
+  $("#nag").textContent = ags.length;
+
+  const esp = (S.estado && S.estado.espera_de_ti) || [];
+  if(esp.length){
+    const w = el("div","ag");
+    w.style.borderColor = "var(--warn)";
+    w.appendChild(el("div","dot espera"));
+    const b = el("div","b");
+    b.appendChild(el("div","t","Te está esperando a ti"));
+    esp.forEach(x=> b.appendChild(el("div","q","• "+esc(x.texto||x))));
+    w.appendChild(b); c.appendChild(w);
+  }
+
+  if(!ags.length){
+    c.appendChild(el("div","vacio", S.demo ? "" :
+      "Todavía no hay ningún agente escribiendo su estado. En cuanto uno trabaje, aparecerá aquí."));
+    if(S.demo) c.lastChild.textContent="Sin agentes.";
+    return;
+  }
+  ags.forEach(a=>{
+    const d = el("div","ag");
+    d.appendChild(el("div","dot "+(a.estado||"parado")));
+    const b = el("div","b");
+    b.appendChild(el("div","t", esc(a.nombre)));
+    if(a.que) b.appendChild(el("div","q", esc(a.que)));
+    const m = el("div","m");
+    if(a.tipo)   m.appendChild(el("span",null,a.tipo));
+    if(a.avance) m.appendChild(el("span",null,esc(a.avance)));
+    if(a.desde)  m.appendChild(el("span",null,cuando(a.desde)));
+    if(m.children.length) b.appendChild(m);
+    if(typeof a.porcentaje === "number"){
+      const bar = el("div","bar"); const i=el("i");
+      i.style.width = Math.max(0,Math.min(100,a.porcentaje))+"%"; bar.appendChild(i);
+      b.appendChild(bar);
+    }
+    d.appendChild(b); c.appendChild(d);
+  });
+}
+
+function pintarHilos(){
+  const c = $("#hilos"); c.innerHTML="";
+  const hs = ((S.buzon && S.buzon.hilos) || []).filter(h=>h.estado!=="cerrado");
+  $("#nhi").textContent = hs.length;
+  if(!hs.length){
+    c.appendChild(el("div","vacio","Nada abierto. Cuando el capataz tenga algo que contarte o preguntarte, saldrá aquí."));
+    $("#pie").textContent = "todo al día";
+    return;
+  }
+  hs.forEach(h => c.appendChild(nodoHilo(h,null)));
+  const pend = hs.filter(h=>h.pregunta && !h.pregunta.respuesta).length;
+  $("#pie").textContent = pend ? pend+" pregunta"+(pend>1?"s":"")+" esperándote" : hs.length+" abierto"+(hs.length>1?"s":"");
+}
+
+function nodoHilo(h, padreId){
+  const sid = padreId ? h.id : null;
+  const hid = padreId || h.id;
+  const d = el("div","hilo"+(S.abiertos[h.id]?" ab":""));
+  d.id = "h_"+h.id;
+
+  const hd = el("div","hd");
+  hd.appendChild(el("span","cid", h.id));
+  hd.appendChild(el("span","ht", esc(h.titulo)));
+  if(h.pregunta && !h.pregunta.respuesta) hd.appendChild(el("span","unread"));
+  hd.appendChild(el("span","ch","▶"));
+  hd.onclick = ()=>{ S.abiertos[h.id] = !S.abiertos[h.id]; d.classList.toggle("ab"); };
+  d.appendChild(hd);
+
+  const b = el("div","body");
+  (h.mensajes||[]).forEach(m=>{
+    const mm = el("div","msg "+(m.de==="dueno"?"yo":"cap"));
+    mm.appendChild(el("div","who", m.de==="dueno" ? "Tú" : (m.de||"capataz")));
+    mm.appendChild(el("div","bu", esc(m.texto)));
+    if(m.ts) mm.appendChild(el("div","ts", cuando(m.ts)));
+    b.appendChild(mm);
+  });
+
+  if(h.pregunta && !h.pregunta.respuesta){
+    const p = el("div","preg");
+    p.appendChild(el("div","p", esc(h.pregunta.texto)));
+    const ops = el("div","ops");
+    (h.pregunta.opciones||["Sí","No"]).forEach(o=>{
+      const bt = el("button","op", o);
+      bt.onclick = ()=> contestarPregunta(hid, sid, o);
+      ops.appendChild(bt);
+    });
+    p.appendChild(ops); b.appendChild(p);
+  }
+
+  (h.subhilos||[]).forEach(s=>{
+    const w = el("div","sub");
+    w.appendChild(nodoHilo(s, h.id));
+    b.appendChild(w);
+  });
+
+  const ta = el("textarea","resp"); ta.placeholder = "Contesta o dicta aquí…";
+  b.appendChild(ta);
+  const acc = el("div","hacc");
+  const bs = el("button",null,"Enviar respuesta");
+  bs.onclick = ()=>{ const t=ta.value; ta.value=""; responder(hid, t, sid); };
+  const bf = el("button","fin","✓ Terminado");
+  bf.onclick = ()=>{ if(confirm("¿Damos esto por terminado? Desaparece de la lista.")) cerrarHilo(hid, sid); };
+  acc.appendChild(bs); acc.appendChild(bf); b.appendChild(acc);
+
+  d.appendChild(b);
+  return d;
+}
+
+/* ═══ 6 · MICRÓFONO (extra: el del teclado también vale) ══════ */
+let rec=null;
+function micro(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){ $("#txt").focus(); toast("Usa el micro de tu teclado"); return; }
+  if(rec){ rec.stop(); return; }
+  rec = new SR(); rec.lang="es-ES"; rec.continuous=true; rec.interimResults=true;
+  const base = $("#txt").value ? $("#txt").value+" " : "";
+  rec.onresult = ev=>{
+    let t="";
+    for(let i=ev.resultIndex;i<ev.results.length;i++) t += ev.results[i][0].transcript;
+    $("#txt").value = base + t;
+  };
+  rec.onend = ()=>{ rec=null; $("#mic").classList.remove("on"); };
+  rec.onerror = ()=>{ rec=null; $("#mic").classList.remove("on"); toast("Usa el micro de tu teclado", true); };
+  rec.start(); $("#mic").classList.add("on"); toast("Habla…");
+}
+
+/* ═══ 7 · PANEL DE CONEXIÓN ═══════════════════════════════════ */
+function pintarCfg(){
+  const c = $("#cfg"); c.innerHTML="";
+  const fila = (a,b)=>{ const f=el("div","fila"); f.appendChild(el("b",null,a)); f.appendChild(el("span",null,b)); c.appendChild(f); };
+  fila("Estado", S.demo ? "ejemplo" : (S.ref ? "conectado" : "sin conectar"));
+  fila("Carpeta", "Dropbox › Aplicaciones › Swallow's Office");
+  fila("Esta página", redirectURI());
+  if(S.ref){
+    const f = el("div","fila"); f.appendChild(el("b",null,"Salir"));
+    const bt = el("button",null,"Desconectar"); bt.style.color="var(--bad)"; bt.onclick=desconectar;
+    f.appendChild(bt); c.appendChild(f);
+  }
+}
+
+/* ═══ 8 · EJEMPLO (para verlo sin conectar nada) ══════════════ */
+function ejemplo(){
+  S.demo = true;
+  S.estado = {v:1, actualizado: ahora(), agentes:[
+    {nombre:"Hebreo", tipo:"constructor", estado:"va", que:"Pantalla de tarjetas para repasar en dos minutos", avance:"paso 3 de 6", porcentaje:48, desde:new Date(Date.now()-25*60000).toISOString()},
+    {nombre:"Proyecto Flutter", tipo:"constructor", estado:"atascado", que:"Entrar con Google: falta la huella de la app", avance:"parado desde ayer", desde:new Date(Date.now()-19*3600000).toISOString()},
+    {nombre:"Auditoría General", tipo:"puntual", estado:"va", que:"Revisando las guardas del arranque", avance:"22 de 22 pruebas", porcentaje:100, desde:new Date(Date.now()-6*60000).toISOString()},
+    {nombre:"Any Task", tipo:"puntual", estado:"va", que:"Construyendo La Oficina", avance:"la página, casi", porcentaje:80, desde:new Date(Date.now()-40*60000).toISOString()}
+  ], espera_de_ti:[{texto:"Crear la app de Dropbox (App key)"},{texto:"Entrar con Google en Proyecto Flutter"}]};
+
+  S.buzon = {v:1, actualizado:ahora(), hilos:[
+    {id:"T-a1c9", titulo:"¿Dónde alojo La Oficina?", de:"capataz", estado:"abierto", creado:new Date(Date.now()-8*60000).toISOString(),
+     mensajes:[{de:"capataz", texto:"La página necesita una dirección de internet para que la abras desde el móvil. Es gratis en los tres sitios.", ts:new Date(Date.now()-8*60000).toISOString()}],
+     pregunta:{texto:"¿Cuál prefieres?", opciones:["GitHub","Netlify","Elige tú"]},
+     subhilos:[]},
+    {id:"T-4b02", titulo:"Repaso de dos minutos sin hablar", de:"capataz", estado:"abierto", creado:new Date(Date.now()-90*60000).toISOString(),
+     mensajes:[{de:"capataz", texto:"Hoy la app de hebreo solo sirve con la sesión de voz abierta. Propongo tarjetas: sale la palabra, dices si la sabes.", ts:new Date(Date.now()-90*60000).toISOString()},
+               {de:"dueno", texto:"Me gusta. Hazlo.", ts:new Date(Date.now()-70*60000).toISOString()}],
+     subhilos:[
+       {id:"S-77e1", titulo:"¿Cuántas tarjetas por vuelta?", de:"capataz", estado:"abierto", creado:new Date(Date.now()-60*60000).toISOString(),
+        mensajes:[{de:"capataz", texto:"Con 12 se hacen dos minutos justos.", ts:new Date(Date.now()-60*60000).toISOString()}],
+        pregunta:{texto:"¿Doce por vuelta?", opciones:["Sí, doce","Más cortas"]}, subhilos:[]}
+     ]}
+  ]};
+  S.abiertos = {"T-a1c9":true};
+  pintar();
+}
+
+/* ═══ 9 · ARRANQUE ════════════════════════════════════════════ */
+$("#env").onclick   = enviar;
+$("#mic").onclick   = micro;
+$("#brec").onclick  = ()=> cargar().then(()=>toast("Al día ✓")).catch(e=>toast(e.message,true));
+$("#bcfg").onclick  = ()=>{ pintarCfg(); $("#modal").classList.add("on"); };
+$("#bcerrar").onclick = ()=> $("#modal").classList.remove("on");
+$("#bconn").onclick = ()=> conectar().catch(e=>toast(e.message,true));
+$("#bdemo").onclick = ()=>{ $("#modal").classList.remove("on"); ejemplo(); };
+$("#bnuevo").onclick = ()=>{ $("#txt").focus(); scrollTo({top:0,behavior:"smooth"}); };
+$("#txt").addEventListener("keydown", e=>{ if(e.key==="Enter" && (e.ctrlKey||e.metaKey)) enviar(); });
+
+(async function inicio(){
+  cargarSesion();
+  const q = new URLSearchParams(location.search);
+  if(q.get("code")){
+    try{
+      await canjear(q.get("code"));
+      history.replaceState({},"",redirectURI());
+      toast("Conectado ✓");
+    }catch(e){ toast(e.message, true); }
+  }else if(q.get("error")){
+    history.replaceState({},"",redirectURI());
+    toast("No se autorizó la conexión", true);
+  }
+  if(S.tok || S.ref){
+    try{ await cargar(); }
+    catch(e){ toast(e.message, true); S.estado=estadoVacio(); S.buzon=buzonVacio(); pintar(); }
+    setInterval(()=>{ if(!S.demo && document.visibilityState==="visible") cargar().catch(()=>{}); }, 45000);
+    document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible" && !S.demo) cargar().catch(()=>{}); });
+  }else{
+    ejemplo();                       // primera visita: se ve cómo queda
+    $("#modal").classList.add("on"); pintarCfg();
+  }
+})();
+</script>
+</body>
+</html>
