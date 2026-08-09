@@ -520,6 +520,8 @@ function buscarHilo(bz, hid, sid){
 
 /* ═══ 5 · PINTAR ══════════════════════════════════════════════ */
 function pintar(){
+  // Cuanto tardo en verse algo desde que abrio la pagina. Se mide una sola vez.
+  if(!S.msPrimero && window.performance) S.msPrimero = Math.round(performance.now());
   pintarTablero();
   pintarHilos();
   const p=$("#pill");
@@ -665,6 +667,9 @@ function pintarCfg(){
   const c = $("#cfg"); c.innerHTML="";
   const fila = (a,b)=>{ const f=el("div","fila"); f.appendChild(el("b",null,a)); f.appendChild(el("span",null,b)); c.appendChild(f); };
   fila("Estado", S.demo ? "ejemplo" : (S.ref ? "conectado" : "sin conectar"));
+  // Pregunto el 09/08 "como de rapido va": aqui lo tiene medido, no de palabra.
+  if(S.msPrimero) fila("Tarda en salir", S.msPrimero + " ms desde que abres");
+  if(S.ms)        fila("Leer tu Dropbox", S.ms + " ms");
   fila("Carpeta", "Dropbox › Aplicaciones › Swallow's Office");
   fila("Esta página", redirectURI());
   if(S.ref){
