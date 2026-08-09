@@ -197,9 +197,20 @@ footer button{background:var(--card);border-radius:9px;padding:8px 13px;font-siz
   </div>
 
   <details id="ayudauri" style="margin-top:14px;font-size:14px;line-height:1.5">
-    <summary style="cursor:pointer">¿Te sale «Invalid redirect_uri»? Ábreme</summary>
-    <p style="margin:10px 0 6px">Falta dar de alta esta dirección en tu app de
-    Dropbox. Es una sola vez y ya nunca más.</p>
+    <summary style="cursor:pointer">¿Dropbox te ha dado un error? Ábreme</summary>
+
+    <p style="margin:10px 0 6px"><b>Si pone «No scope requested can be granted
+    for this app»</b> (o «solicitud incorrecta»): tu app de Dropbox puede ver tu
+    nombre, pero no abrir ni guardar archivos. Los permisos de archivos están
+    apagados, y eso solo se enciende desde tu ordenador.</p>
+    <p style="margin:6px 0">En el Escritorio, carpeta
+    <b>ROBOTS\4 - ARREGLA ESTO (doble clic)</b>, abre
+    <b>PERMISOS DE DROPBOX (doble clic)</b>. Te lleva al sitio exacto, te dice
+    qué dos casillas marcar y él solo comprueba cuándo ya están. Luego vuelves
+    aquí y pulsas Conectar.</p>
+
+    <p style="margin:14px 0 6px"><b>Si pone «Invalid redirect_uri»</b>, es otra
+    cosa: falta dar de alta esta dirección en tu app. Es una sola vez.</p>
     <p style="margin:6px 0"><b>1.</b> Copia esta línea:</p>
     <div class="row" style="align-items:center;gap:8px">
       <code id="uriexacta" style="flex:1;word-break:break-all;background:#0003;
