@@ -238,7 +238,25 @@ let S = {
   demo:false, estado:null, buzon:null,
   revEstado:null, revBuzon:null,
   abiertos:{},                    // hilos desplegados
+  ms:0,                           // lo que tardo la ultima lectura de Dropbox
 };
+
+/* El tablero se pinta AL INSTANTE con lo ultimo que se vio, guardado aqui en el
+   movil, y Dropbox se lee detras sin ningun cartel. Antes se esperaba a la red
+   mostrando "leyendo tu Dropbox..." y parecia lento aunque tardase medio
+   segundo. Orden suya del 09/08: "que todo sea muy rapido". */
+const CACHE = "oficina.cache.v1";
+function guardarCache(){
+  try{ localStorage.setItem(CACHE, JSON.stringify({estado:S.estado, buzon:S.buzon})); }catch(e){}
+}
+function cargarCache(){
+  try{
+    const j = JSON.parse(localStorage.getItem(CACHE)||"null");
+    if(!j || !j.estado) return false;
+    S.estado = j.estado; S.buzon = j.buzon || buzonVacio();
+    return true;                 // las revisiones NO se cachean: son del servidor
+  }catch(e){ return false; }
+}
 
 /* ── utilidades ──────────────────────────────────────────────── */
 const $  = s => document.querySelector(s);
@@ -351,16 +369,27 @@ function urlCors(base, arg, tok){
 }
 async function fallo(r){
   const t = await r.text().catch(()=> "");
-  // 401 = el permiso de 4 h se agoto. NO hay que reconectar: se pide otro con
-  // el refresh_token. Poniendo exp=0 la siguiente llamada -que llega sola en
-  // 45 s o al volver a la pantalla- lo renueva y esto se cura solo. Antes decia
-  // "Sesion caducada" y mandaba al dueno a reconectar sin motivo. V-083.
-  if(r.status===401) { S.tok=null; S.exp=0; return new Error("Renovando el permiso… un momento."); }
+  // 401 = el permiso de 4 h se agoto. NO se le enseña NADA al dueno: se marca
+  // como caducado y conPermiso() pide otro permiso y REPITE la peticion en el
+  // acto. Antes salia "Renovando el permiso... un momento" y el 09/08 dijo que
+  // no entendia por que tenia que perder tiempo en eso. V-083 + V-084.
+  if(r.status===401) { S.tok=null; S.exp=0; const e=new Error("permiso caducado"); e.caducado=true; return e; }
   return new Error("Dropbox " + r.status + (t ? ": " + t.slice(0,180) : ""));
 }
 
+/** Si el permiso se agoto a mitad, se renueva y se repite. En silencio. */
+async function conPermiso(fn){
+  try{ return await fn(); }
+  catch(e){
+    if(!e.caducado) throw e;
+    await refrescar();
+    return await fn();
+  }
+}
+
 /** Lee un JSON. Devuelve {datos, rev} o {datos:null} si no existe todavía. */
-async function bajar(ruta){
+const bajar = ruta => conPermiso(()=> bajarUna(ruta));
+async function bajarUna(ruta){
   const tk = await token();
   const r = await fetch(urlCors("https://content.dropboxapi.com/2/files/download",{path:ruta},tk),
                         {method:"POST", headers:{"Content-Type":CT}});
@@ -373,7 +402,8 @@ async function bajar(ruta){
 }
 
 /** Escribe un JSON. Con rev usa modo update: si otro escribió antes, falla y reintentamos. */
-async function subir(ruta, datos, rev){
+const subir = (ruta, datos, rev) => conPermiso(()=> subirUno(ruta, datos, rev));
+async function subirUno(ruta, datos, rev){
   const tk = await token();
   const arg = {
     path: ruta, mute: true, autorename: false,
@@ -391,6 +421,9 @@ async function subir(ruta, datos, rev){
 /** Cambia el buzón a prueba de choques con los agentes: relee, aplica y reintenta. */
 async function editarBuzon(cambio){
   if(S.demo){ cambio(S.buzon); pintar(); return; }
+  // Si venimos del tablero pintado de memoria todavia no tenemos la revision
+  // del servidor, y escribir sin ella aplastaria lo que dejo un agente.
+  if(!S.revBuzon){ const b0 = await bajar(F_BUZON); if(b0.datos){ S.buzon=b0.datos; S.revBuzon=b0.rev; } }
   for(let i=0;i<4;i++){
     try{
       cambio(S.buzon);
@@ -411,14 +444,18 @@ async function editarBuzon(cambio){
 function buzonVacio(){ return {v:1, actualizado:ahora(), hilos:[]}; }
 function estadoVacio(){ return {v:1, actualizado:null, agentes:[], espera_de_ti:[]}; }
 
+// Sin cartel de "leyendo tu Dropbox": lo que hay ya esta pintado desde el
+// primer instante y esto solo lo pone al dia por detras. Se cronometra para
+// poder decirle CUANTO tarda de verdad, que es lo que pregunto el 09/08.
 async function cargar(){
   if(S.demo){ pintar(); return; }
-  $("#sub").textContent = "leyendo tu Dropbox…";
+  const t0 = (window.performance ? performance.now() : Date.now());
   const [e,b] = await Promise.all([bajar(F_ESTADO), bajar(F_BUZON)]);
+  S.ms = Math.round((window.performance ? performance.now() : Date.now()) - t0);
   S.estado = e.datos || estadoVacio(); S.revEstado = e.rev;
   S.buzon  = b.datos || buzonVacio();  S.revBuzon  = b.rev;
   if(!b.datos) S.revBuzon = await subir(F_BUZON, S.buzon, null);  // primera vez
-  pintar();
+  guardarCache(); pintar();
 }
 
 /* ═══ 4 · ACCIONES DEL DUEÑO ══════════════════════════════════ */
@@ -490,7 +527,7 @@ function pintar(){
   p.className = "pill " + (S.demo?"demo":(S.tok||S.ref?"viva":"off"));
   const act = S.estado && S.estado.actualizado;
   $("#sub").textContent = S.demo ? "datos de ejemplo"
-      : (act ? "la fábrica, "+cuando(act) : "esperando a los agentes");
+      : (act ? "la fábrica, "+cuando(act)+(S.ms?" · "+S.ms+" ms":"") : "esperando a los agentes");
 }
 
 function pintarTablero(){
@@ -596,7 +633,9 @@ function nodoHilo(h, padreId){
   const bs = el("button",null,"Enviar respuesta");
   bs.onclick = ()=>{ const t=ta.value; ta.value=""; responder(hid, t, sid); };
   const bf = el("button","fin","✓ Terminado");
-  bf.onclick = ()=>{ if(confirm("¿Damos esto por terminado? Desaparece de la lista.")) cerrarHilo(hid, sid); };
+  // Sin preguntar nada: aqui no se abre un dialogo que hay que contestar. Si se
+  // equivoca, se lo dice al capataz y lo reabre. Orden suya del 09/08.
+  bf.onclick = ()=> cerrarHilo(hid, sid);
   acc.appendChild(bs); acc.appendChild(bf); b.appendChild(acc);
 
   d.appendChild(b);
@@ -724,9 +763,10 @@ $("#bcopiauri").onclick = async ()=>{
     toast("No se autorizó la conexión", true);
   }
   if(S.tok || S.ref){
+    if(cargarCache()) pintar();     // 0 ms: se ve el tablero antes de tocar la red
     try{ await cargar(); }
-    catch(e){ toast(e.message, true); S.estado=estadoVacio(); S.buzon=buzonVacio(); pintar(); }
-    setInterval(()=>{ if(!S.demo && document.visibilityState==="visible") cargar().catch(()=>{}); }, 45000);
+    catch(e){ toast(e.message, true); if(!S.estado){ S.estado=estadoVacio(); S.buzon=buzonVacio(); } pintar(); }
+    setInterval(()=>{ if(!S.demo && document.visibilityState==="visible") cargar().catch(()=>{}); }, 20000);
     document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible" && !S.demo) cargar().catch(()=>{}); });
   }else{
     ejemplo();                       // primera visita: se ve cómo queda
