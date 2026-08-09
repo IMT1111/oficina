@@ -74,6 +74,11 @@ h2.sec .n{background:var(--card2);color:var(--muted);border-radius:20px;padding:
 .ag .t{font-weight:650;font-size:15.5px}
 .ag .q{color:var(--muted);font-size:14px;margin-top:2px;word-wrap:break-word}
 .ag .m{color:var(--muted);font-size:12px;margin-top:5px;display:flex;gap:10px;flex-wrap:wrap}
+.ag .q.abre{color:var(--txt);cursor:pointer;display:flex;gap:6px;align-items:flex-start}
+.ag .q.abre .fl{flex:0 0 auto;color:var(--warn);transition:transform .15s}
+.ag .q.abre.on .fl{transform:rotate(90deg)}
+.pasos{margin:5px 0 9px 12px;padding-left:11px;border-left:2px solid var(--line)}
+.pasos div{color:var(--muted);font-size:13.5px;line-height:1.45;margin:5px 0;word-wrap:break-word;overflow-wrap:anywhere}
 .bar{height:5px;background:var(--bg2);border-radius:4px;overflow:hidden;margin-top:7px}
 .bar i{display:block;height:100%;background:var(--acc);border-radius:4px}
 
@@ -567,7 +572,23 @@ function pintarTablero(){
     w.appendChild(el("div","dot espera"));
     const b = el("div","b");
     b.appendChild(el("div","t","Te está esperando a ti"));
-    esp.forEach(x=> b.appendChild(el("div","q","• "+esc(x.texto||x))));
+    esp.forEach(x=>{
+      const pasos = (x && x.pasos) || [];
+      const fila = el("div","q");
+      if(!pasos.length){ fila.textContent = "• "+esc(x.texto||x); b.appendChild(fila); return; }
+      // con pasos: se toca y se abren, uno debajo de otro
+      fila.className = "q abre";
+      fila.appendChild(el("span","fl","▸"));
+      fila.appendChild(el("span",null,esc(x.texto||x)));
+      const caja = el("div","pasos"); caja.style.display="none";
+      pasos.forEach(p=> caja.appendChild(el("div",null,esc(p))));
+      fila.onclick = ()=>{
+        const abierto = caja.style.display !== "none";
+        caja.style.display = abierto ? "none" : "block";
+        fila.classList.toggle("on", !abierto);
+      };
+      b.appendChild(fila); b.appendChild(caja);
+    });
     w.appendChild(b); c.appendChild(w);
   }
 
@@ -768,7 +789,11 @@ function ejemplo(){
     {nombre:"Proyecto Flutter", tipo:"constructor", estado:"atascado", que:"Entrar con Google: falta la huella de la app", avance:"parado desde ayer", desde:new Date(Date.now()-19*3600000).toISOString()},
     {nombre:"Auditoría General", tipo:"puntual", estado:"va", que:"Revisando las guardas del arranque", avance:"22 de 22 pruebas", porcentaje:100, desde:new Date(Date.now()-6*60000).toISOString()},
     {nombre:"Any Task", tipo:"puntual", estado:"va", que:"Construyendo La Oficina", avance:"la página, casi", porcentaje:80, desde:new Date(Date.now()-40*60000).toISOString()}
-  ], espera_de_ti:[{texto:"Pegar la dirección de esta página en tu app de Dropbox (Redirect URIs)"},{texto:"Entrar con Google en Proyecto Flutter"}]};
+  ], espera_de_ti:[{texto:"Pegar la dirección de esta página en tu app de Dropbox (Redirect URIs)"},
+    {texto:"Entrar con Google en Proyecto Flutter", pasos:[
+      "1. Entra en console.firebase.google.com y abre el proyecto all-apps-danis",
+      "2. Authentication > Sign-in method > Google > Enable > Save",
+      "3. Baja google-services.json otra vez a la carpeta FIREBASE de Dropbox"]}]};
 
   S.buzon = {v:1, actualizado:ahora(), hilos:[
     {id:"T-a1c9", titulo:"¿Dónde alojo La Oficina?", de:"capataz", estado:"abierto", creado:new Date(Date.now()-8*60000).toISOString(),
