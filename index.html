@@ -271,9 +271,14 @@ function verificador(){
 }
 function redirectURI(){ return location.origin + location.pathname; }
 
+// El codigo de seguridad de PKCE va en localStorage, NO en sessionStorage.
+// sessionStorage es POR PESTANA: al ir a Dropbox y volver, el movil puede
+// devolverte en otra pestana o con la pestana recreada, y entonces se pierde
+// y el canje falla SIEMPRE. Ese era el bucle infinito del 09/08. Vacuna V-083.
 async function conectar(){
   const v = verificador();
-  sessionStorage.setItem("pkce", v);
+  localStorage.setItem("pkce", v);
+  localStorage.setItem("pkce_t", String(Date.now()));
   const u = new URL("https://www.dropbox.com/oauth2/authorize");
   u.searchParams.set("client_id", APP_KEY);
   u.searchParams.set("response_type","code");
@@ -285,7 +290,7 @@ async function conectar(){
 }
 
 async function canjear(code){
-  const v = sessionStorage.getItem("pkce");
+  const v = localStorage.getItem("pkce") || sessionStorage.getItem("pkce");
   if(!v) throw new Error("Falta el código de seguridad. Vuelve a conectar.");
   const body = new URLSearchParams({
     grant_type:"authorization_code", code, code_verifier:v,
@@ -295,15 +300,25 @@ async function canjear(code){
   const j = await r.json();
   if(!r.ok) throw new Error(j.error_description || j.error || "No se pudo conectar");
   S.tok=j.access_token; S.ref=j.refresh_token||S.ref; S.exp=Date.now()+(j.expires_in-120)*1000;
-  sessionStorage.removeItem("pkce"); guardarSesion();
+  olvidarPkce(); guardarSesion();
+}
+function olvidarPkce(){
+  try{ localStorage.removeItem("pkce"); localStorage.removeItem("pkce_t");
+       sessionStorage.removeItem("pkce"); }catch(e){}
 }
 
+// Nunca dice "sesion caducada" a secas: eso no le dice al dueno QUE ha pasado
+// ni que hacer, y el 09/08 le dejo dando vueltas. Si Dropbox rechaza algo, se
+// enseña SU texto, que es el unico que permite arreglarlo. Vacuna V-083.
 async function refrescar(){
-  if(!S.ref) throw new Error("Sesión caducada. Toca ⚙ y conecta otra vez.");
+  if(!S.ref) throw new Error(S.ultimoError || "Aún no estás conectado. Toca ⚙ y pulsa Conectar.");
   const body = new URLSearchParams({grant_type:"refresh_token", refresh_token:S.ref, client_id:APP_KEY});
   const r = await fetch("https://api.dropboxapi.com/oauth2/token",{method:"POST", body});
   const j = await r.json();
-  if(!r.ok) throw new Error("Sesión caducada. Toca ⚙ y conecta otra vez.");
+  if(!r.ok){
+    S.ref=null; guardarSesion();
+    throw new Error("Dropbox: " + (j.error_description || j.error || r.status) + ". Toca ⚙ y conecta otra vez.");
+  }
   S.tok=j.access_token; S.exp=Date.now()+(j.expires_in-120)*1000; guardarSesion();
 }
 async function token(){
@@ -336,7 +351,11 @@ function urlCors(base, arg, tok){
 }
 async function fallo(r){
   const t = await r.text().catch(()=> "");
-  if(r.status===401) { S.tok=null; return new Error("Sesión caducada. Toca ⚙ y conecta otra vez."); }
+  // 401 = el permiso de 4 h se agoto. NO hay que reconectar: se pide otro con
+  // el refresh_token. Poniendo exp=0 la siguiente llamada -que llega sola en
+  // 45 s o al volver a la pantalla- lo renueva y esto se cura solo. Antes decia
+  // "Sesion caducada" y mandaba al dueno a reconectar sin motivo. V-083.
+  if(r.status===401) { S.tok=null; S.exp=0; return new Error("Renovando el permiso… un momento."); }
   return new Error("Dropbox " + r.status + (t ? ": " + t.slice(0,180) : ""));
 }
 
@@ -678,11 +697,28 @@ $("#bcopiauri").onclick = async ()=>{
   cargarSesion();
   const q = new URLSearchParams(location.search);
   if(q.get("code")){
+    // El ?code= se BORRA de la barra pase lo que pase. Un code de Dropbox sirve
+    // UNA vez: si se queda en la URL, cada recarga lo reintenta, Dropbox lo
+    // rechaza por usado y parece que la sesion caduca sola. Vacuna V-083.
+    const code = q.get("code");
+    history.replaceState({},"",redirectURI());
     try{
-      await canjear(q.get("code"));
-      history.replaceState({},"",redirectURI());
+      await canjear(code);
+      localStorage.removeItem("reintento");
       toast("Conectado ✓");
-    }catch(e){ toast(e.message, true); }
+    }catch(e){
+      olvidarPkce();
+      // Un solo reintento automatico, y no mas de uno por minuto: asi el
+      // tropiezo tipico se arregla solo y no puede convertirse en un bucle.
+      const ult = Number(localStorage.getItem("reintento")||0);
+      if(Date.now()-ult > 60000){
+        localStorage.setItem("reintento", String(Date.now()));
+        toast("Reintentando la conexión…");
+        return conectar();
+      }
+      S.ultimoError = e.message;
+      toast(e.message, true);
+    }
   }else if(q.get("error")){
     history.replaceState({},"",redirectURI());
     toast("No se autorizó la conexión", true);
