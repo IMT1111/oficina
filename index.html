@@ -187,6 +187,27 @@ footer button{background:var(--card);border-radius:9px;padding:8px 13px;font-siz
   <div class="row" style="margin-top:16px">
     <button class="btn" id="bconn">Conectar con Dropbox</button>
   </div>
+
+  <details id="ayudauri" style="margin-top:14px;font-size:14px;line-height:1.5">
+    <summary style="cursor:pointer">¿Te sale «Invalid redirect_uri»? Ábreme</summary>
+    <p style="margin:10px 0 6px">Falta dar de alta esta dirección en tu app de
+    Dropbox. Es una sola vez y ya nunca más.</p>
+    <p style="margin:6px 0"><b>1.</b> Copia esta línea:</p>
+    <div class="row" style="align-items:center;gap:8px">
+      <code id="uriexacta" style="flex:1;word-break:break-all;background:#0003;
+        padding:8px;border-radius:6px;font-size:13px"></code>
+      <button class="btn ghost" id="bcopiauri" style="white-space:nowrap">Copiar</button>
+    </div>
+    <p style="margin:10px 0 6px"><b>2.</b> Abre tu app en Dropbox:<br>
+      <a id="lnkapp" target="_blank" rel="noopener" style="word-break:break-all"></a></p>
+    <p style="margin:6px 0"><b>3.</b> En la pestaña <b>Settings</b>, baja hasta el
+    recuadro <b>Redirect URIs</b>, pega la línea y pulsa <b>Add</b>.</p>
+    <p style="margin:6px 0"><b>4.</b> En la pestaña <b>Permissions</b>, marca
+    <b>files.content.read</b> y <b>files.content.write</b>, y pulsa
+    <b>Submit</b> abajo del todo.</p>
+    <p style="margin:6px 0"><b>5.</b> Vuelve aquí y pulsa Conectar. Ya está.</p>
+  </details>
+
   <div class="row">
     <button class="btn ghost" style="flex:1" id="bdemo">Ver ejemplo (sin conectar)</button>
     <button class="btn ghost" style="flex:1" id="bcerrar">Cerrar</button>
@@ -633,6 +654,25 @@ $("#bconn").onclick = ()=> conectar().catch(e=>toast(e.message,true));
 $("#bdemo").onclick = ()=>{ $("#modal").classList.remove("on"); ejemplo(); };
 $("#bnuevo").onclick = ()=>{ $("#txt").focus(); scrollTo({top:0,behavior:"smooth"}); };
 $("#txt").addEventListener("keydown", e=>{ if(e.key==="Enter" && (e.ctrlKey||e.metaKey)) enviar(); });
+
+// La direccion que hay que dar de alta en Dropbox, sacada del MISMO sitio que
+// usa conectar(): asi no puede desviarse de lo que se envia de verdad. Vacuna V-081.
+$("#uriexacta").textContent = redirectURI();
+(function(){
+  const a = $("#lnkapp");
+  a.href = "https://www.dropbox.com/developers/apps/info/" + APP_KEY;
+  a.textContent = "Mi app en Dropbox (" + APP_KEY + ")";
+})();
+$("#bcopiauri").onclick = async ()=>{
+  const t = redirectURI();
+  try { await navigator.clipboard.writeText(t); toast("Copiado ✓"); }
+  catch(e){
+    // En movil sin permiso de portapapeles: se selecciona para copiar a mano.
+    const r = document.createRange(); r.selectNode($("#uriexacta"));
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    toast("Seleccionado: mantén pulsado y copia");
+  }
+};
 
 (async function inicio(){
   cargarSesion();
