@@ -109,6 +109,10 @@ textarea{resize:vertical;min-height:92px}
 .rbar{background:var(--acc);border-radius:3px 3px 0 0;min-height:0}
 .rdia{color:var(--muted);font-size:10.5px;text-align:center;margin-top:4px}
 .vacio{color:var(--muted);font-size:14px;line-height:1.5}
+/* un dato que se quedo de la vuelta anterior porque esta no se pudo mirar:
+   se ENSENA con su edad, no se calla. Un numero sin fecha se lee como el de
+   ahora, y eso es lo que le hacia mirar un tablero muerto creyendolo vivo. */
+.viejo{color:var(--warn);font-size:12.5px;line-height:1.45;margin:0 0 9px}
 .fila{display:flex;justify-content:space-between;align-items:center;gap:10px;
   padding:10px 0;border-bottom:1px solid var(--line);font-size:14.5px}
 .fila:last-child{border-bottom:0}
@@ -379,6 +383,17 @@ function cuando(iso){
   const h=Math.floor(m/60); if(h<24) return "hace "+h+" h";
   const dd=Math.floor(h/24); return dd===1?"ayer":"hace "+dd+" días";
 }
+/* El cartel de "esto no es de ahora". Lo enciende cualquier campo `_de`,
+   que actualizar_oficina.js escribe cuando una seccion se queda con el
+   dato de la vuelta anterior porque esta no se pudo medir. */
+function avisoViejo(iso, que){
+  if(!iso) return null;
+  const t = cuando(iso);
+  return el("div","viejo",
+    "Esto es de " + (t || "antes") + ". Ahora mismo no se ha podido mirar " +
+    que + ", así que te enseño lo último que se supo.");
+}
+function conAviso(c, iso, que){ const a = avisoViejo(iso, que); if(a) c.appendChild(a); }
 function idCorto(p){ return p + Math.random().toString(36).slice(2,6); }
 
 /* ═══ 1 · OAUTH PKCE ══════════════════════════════════════════ */
@@ -740,6 +755,7 @@ function pintarEspera(){
 function pintarResumen(){
   const c = $("#resumen"); c.innerHTML="";
   const ags = (S.estado && S.estado.agentes) || [];
+  conAviso(c, S.estado && S.estado.agentes_de, "qué está haciendo cada uno");
   if(!ags.length){
     c.appendChild(el("div","vacio","Todavía no hay ningún agente escribiendo su estado."));
     return;
@@ -774,6 +790,7 @@ function pintarProyectos(){
 }
 function lista(sel, ls, vacio){
   const c = $(sel); c.innerHTML="";
+  conAviso(c, S.estado && S.estado.agentes_de, "qué está haciendo cada uno");
   if(!ls.length){ c.appendChild(el("div","vacio", vacio)); return; }
   ls.forEach(a=>{
     // un modulo (a.padre) va METIDO debajo de su app, con una raya al lado:
@@ -808,6 +825,7 @@ function pintarHecho(){
 
   const c = $("#hechoLista"); c.innerHTML="";
   const cs = h.commits || [];
+  conAviso(c, h.commits_de, "qué se ha terminado");
   if(!cs.length) c.appendChild(el("div","vacio","Todavía no hay nada terminado que enseñar."));
   cs.forEach(x=>{
     const d = el("div","mini");
@@ -835,6 +853,7 @@ function pintarHecho(){
 
   const r = $("#hechoRitmo"); r.innerHTML="";
   const rs = h.ritmo || [];
+  conAviso(r, h.ritmo_de, "cuánto se ha trabajado estos días");
   if(!rs.length){ r.appendChild(el("div","vacio","Sin medir todavía.")); return; }
   const alto = Math.max(1, ...rs.map(x=>x.n));
   const caja = el("div","ritmo");
@@ -1376,12 +1395,14 @@ function pintarSalud(){
   const c = $("#salud"); if(!c) return;
   c.innerHTML="";
   const s = (S.estado && S.estado.salud) || null;
+  conAviso(c, S.estado && S.estado.salud_de, "si todo va bien");
   if(!s){ c.appendChild(el("div","vacio","Todavía no se ha mirado nada.")); return; }
 
-  let malas = 0;
+  let malas = 0, sinMirar = 0;
   // mal=true pinta el aviso en rojo; el resto queda en gris como lo normal
-  const linea = (titulo, texto, pie, mal)=>{
+  const linea = (titulo, texto, pie, mal, nose)=>{
     if(mal) malas++;
+    if(nose) sinMirar++;
     const d = el("div","mini");
     const n = el("div","nm", titulo);
     if(mal) n.style.color = "var(--bad)";
@@ -1392,12 +1413,17 @@ function pintarSalud(){
   };
 
   const cop = s.copia;
+  // tres estados, no dos: va bien, va mal, y NO SE HA PODIDO MIRAR. Juntar
+  // los dos ultimos es lo que le encendia el rojo con la copia recien hecha
+  // (10/08); juntarlos al reves le diria que todo va bien sin haber mirado.
   linea("Copia de seguridad",
-    s.copia_vieja
-      ? "No se está guardando. Debería hacerse sola cada media hora y no lo está haciendo."
-      : "Se guarda sola cada media hora. Todo lo de esta casa está dentro.",
-    cop ? "la última, " + cuando(cop.ts) : "no hay ninguna",
-    s.copia_vieja);
+    s.copia_sin_medir
+      ? "Ahora mismo no se ha podido mirar, así que no sé decirte. No quiere decir que esté mal."
+      : s.copia_vieja
+        ? "No se está guardando. Debería hacerse sola cada media hora y no lo está haciendo."
+        : "Se guarda sola cada media hora. Todo lo de esta casa está dentro.",
+    cop ? "la última, " + cuando(cop.ts) : (s.copia_sin_medir ? "" : "no hay ninguna"),
+    s.copia_vieja, s.copia_sin_medir);
 
   const sinc = (s.sincronizacion||{});
   linea("Dropbox",
@@ -1410,17 +1436,26 @@ function pintarSalud(){
   (s.repos||[]).forEach(r=>{
     // tres días sin guardar nada en un proyecto ya es raro: o está parado
     // de verdad, o alguien lleva días trabajando sin guardar
-    const mal = r.horas == null || r.horas > 72;
+    // "no se pudo mirar" NO es una alarma: sin esto, un git que no contesta
+    // le pintaba en rojo un proyecto que estaba guardando perfectamente
+    const mal = !r.sin_medir && (r.horas == null || r.horas > 72);
     linea(esc(r.nombre),
-      r.horas == null ? "No se puede mirar: ahí no hay nada guardado."
+      r.sin_medir      ? "Ahora mismo no se ha podido mirar. No quiere decir que esté mal."
+      : r.horas == null ? "No se puede mirar: ahí no hay nada guardado."
       : mal            ? "Lleva días sin guardar nada nuevo."
                        : "Guardando su trabajo con normalidad.",
       r.ts ? "lo último, " + cuando(r.ts) : "",
-      mal);
+      mal, r.sin_medir);
   });
 
-  const t = el("div","vacio", malas ? "Hay "+malas+(malas===1?" cosa":" cosas")+" que mirar." : "Todo va bien.");
-  t.style.color = malas ? "var(--bad)" : "var(--ok)";
+  // "Todo va bien" con tres cosas sin mirar es una mentira tranquilizadora,
+  // que es justo la que hace que no se mire un tablero. Se dice lo que hay.
+  const t = el("div","vacio",
+    malas    ? "Hay "+malas+(malas===1?" cosa":" cosas")+" que mirar."
+    : sinMirar ? "Lo que se ha podido mirar va bien, pero "+sinMirar+
+                 (sinMirar===1?" cosa no se ha podido mirar":" cosas no se han podido mirar")+"."
+               : "Todo va bien.");
+  t.style.color = malas ? "var(--bad)" : (sinMirar ? "var(--warn)" : "var(--ok)");
   c.appendChild(t);
 }
 
