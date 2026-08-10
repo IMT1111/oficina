@@ -102,6 +102,12 @@ textarea{resize:vertical;min-height:92px}
 .bar{height:6px;background:#0a1120;border-radius:4px;overflow:hidden;margin-top:9px}
 .bar i{display:block;height:100%;background:var(--acc);border-radius:4px}
 .falta{color:var(--muted);font-size:12.5px;margin-top:5px}
+/* el ritmo: una barra por dia, catorce. Se dibujan con divs porque la
+   pagina no carga ni una libreria y asi sigue siendo un solo archivo. */
+.ritmo{display:flex;align-items:flex-end;gap:4px;height:96px;margin:6px 0 8px}
+.rcol{flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%}
+.rbar{background:var(--acc);border-radius:3px 3px 0 0;min-height:0}
+.rdia{color:var(--muted);font-size:10.5px;text-align:center;margin-top:4px}
 .vacio{color:var(--muted);font-size:14px;line-height:1.5}
 .fila{display:flex;justify-content:space-between;align-items:center;gap:10px;
   padding:10px 0;border-bottom:1px solid var(--line);font-size:14.5px}
@@ -207,6 +213,26 @@ textarea{resize:vertical;min-height:92px}
   <section class="vista" id="v-proyectos">
     <div class="card"><h2>📋 TUS PROYECTOS</h2><div id="proyectos"></div></div>
     <div class="card"><h2>🔧 ENCARGOS SUELTOS</h2><div id="puntuales"></div></div>
+  </section>
+
+  <!-- ═══ LO HECHO ═══
+       Lo que el panel del ordenador (PANEL2.html) enseñaba y aquí no
+       estaba: en el móvil solo veía lo que se hace AHORA. -->
+  <section class="vista" id="v-hecho">
+    <div class="card">
+      <h2>✅ LO ÚLTIMO QUE HAN HECHO</h2>
+      <div id="hechoLista"></div>
+    </div>
+    <div class="card">
+      <h2>📱 PARA INSTALAR EN EL MÓVIL</h2>
+      <p class="sub">Están en Dropbox › APK. Ábrelas desde ahí para instalarlas.</p>
+      <div id="hechoApks"></div>
+    </div>
+    <div class="card">
+      <h2>📈 CUÁNTO SE TRABAJA</h2>
+      <p class="sub">Cada barra es un día. Los últimos catorce.</p>
+      <div id="hechoRitmo"></div>
+    </div>
   </section>
 
   <!-- ═══ SOLICITUDES ═══ -->
@@ -595,6 +621,7 @@ const VISTAS = [
   {id:"inicio",    nombre:"Inicio"},
   {id:"robots",    nombre:"Robots",    cuenta:()=> nRobots()},
   {id:"proyectos", nombre:"Proyectos", cuenta:()=> nAgentes()},
+  {id:"hecho",     nombre:"Lo hecho"},
   {id:"solicitudes", nombre:"Solicitudes", cuenta:()=> nSolicitudes()},
   {id:"hablar",    nombre:"Hablar",    cuenta:()=> nHilos()},
   {id:"ajustes",   nombre:"Ajustes"}
@@ -628,6 +655,7 @@ function pintar(){
   pintarEspera();
   pintarResumen();
   pintarProyectos();
+  pintarHecho();
   pintarRobots();
   pintarSolicitudes();
   pintarHilos();
@@ -730,6 +758,60 @@ function lista(sel, ls, vacio){
     }
     c.appendChild(d);
   });
+}
+
+/* ── LO HECHO: lo último cerrado, las APK y el ritmo ───────────
+   Tres cosas que el panel del ordenador enseñaba y aquí no estaban.
+   Los textos son los mensajes de los commits, que en esta casa ya
+   van en español: no se traducen ni se adornan. */
+function pintarHecho(){
+  const h = (S.estado && S.estado.hecho) || {};
+
+  const c = $("#hechoLista"); c.innerHTML="";
+  const cs = h.commits || [];
+  if(!cs.length) c.appendChild(el("div","vacio","Todavía no hay nada terminado que enseñar."));
+  cs.forEach(x=>{
+    const d = el("div","mini");
+    d.appendChild(el("div","nm", esc(x.texto)));
+    const m = el("div","m");
+    m.appendChild(el("span",null, esc(x.donde)));
+    m.appendChild(el("span",null, cuando(x.ts)));
+    d.appendChild(m);
+    c.appendChild(d);
+  });
+
+  const a = $("#hechoApks"); a.innerHTML="";
+  const as = h.apks || [];
+  if(!as.length) a.appendChild(el("div","vacio","Todavía no hay ninguna aplicación preparada."));
+  as.forEach(x=>{
+    const d = el("div","mini");
+    d.appendChild(el("div","nm", esc(x.nombre)));
+    d.appendChild(el("div","est", esc(x.archivo)));
+    const m = el("div","m");
+    m.appendChild(el("span",null, cuando(x.ts)));
+    if(x.mb) m.appendChild(el("span",null, x.mb+" MB"));
+    d.appendChild(m);
+    a.appendChild(d);
+  });
+
+  const r = $("#hechoRitmo"); r.innerHTML="";
+  const rs = h.ritmo || [];
+  if(!rs.length){ r.appendChild(el("div","vacio","Sin medir todavía.")); return; }
+  const alto = Math.max(1, ...rs.map(x=>x.n));
+  const caja = el("div","ritmo");
+  rs.forEach(x=>{
+    const col = el("div","rcol");
+    const b = el("div","rbar");
+    // siempre 2px de alto minimo: un dia con UN commit tiene que verse,
+    // y a escala pura no se veria nada al lado de un dia de 500
+    b.style.height = (x.n ? Math.max(2, Math.round(x.n*100/alto)) : 0) + "%";
+    b.title = x.dia + ": " + x.n;
+    col.appendChild(b);
+    col.appendChild(el("div","rdia", x.dia.slice(8)));
+    caja.appendChild(col);
+  });
+  r.appendChild(caja);
+  r.appendChild(el("div","sub","El día más movido: "+alto+" cosas guardadas."));
 }
 
 /* ── ROBOTS: el reflejo del panel del ordenador ───────────────── */
@@ -1011,7 +1093,16 @@ function ejemplo(){
   ], espera_de_ti:[
     {texto:"Entrar con Google en Proyecto Flutter", pasos:[
       "1. Doble clic en el robot ENTRAR CON GOOGLE del Escritorio: entra con tu cuenta y él hace lo demás solo",
-      "2. En console.firebase.google.com, proyecto all-apps-danis, busca la lista de formas de entrar y enciende la fila de Google"]}]};
+      "2. En console.firebase.google.com, proyecto all-apps-danis, busca la lista de formas de entrar y enciende la fila de Google"]}],
+  hecho:{
+    commits:[
+      {donde:"Portal", texto:"La portada ya deja poner tus propias secciones", ts:new Date(Date.now()-14*60000).toISOString()},
+      {donde:"el sistema", texto:"La Oficina: sección nueva para ver lo ya hecho", ts:new Date(Date.now()-70*60000).toISOString()}],
+    apks:[{nombre:"Portal", archivo:"Portal_2026-08-09_02-33.apk", ts:new Date(Date.now()-26*3600000).toISOString(), mb:81.7}],
+    ritmo:[{dia:"2026-07-28",n:172},{dia:"2026-07-29",n:288},{dia:"2026-07-30",n:326},{dia:"2026-07-31",n:316},
+           {dia:"2026-08-01",n:98},{dia:"2026-08-02",n:319},{dia:"2026-08-03",n:529},{dia:"2026-08-04",n:499},
+           {dia:"2026-08-05",n:349},{dia:"2026-08-06",n:314},{dia:"2026-08-07",n:449},{dia:"2026-08-08",n:264},
+           {dia:"2026-08-09",n:493},{dia:"2026-08-10",n:148}]}};
   S.robots = {v:1, actualizado: ahora(), puente:"abierto", grupos:[
     {grupo:"1 - LANZAR AGENTES · CONSTRUCTORES", robots:[
       {id:"r4", nombre:"Construir ALARMAS (alarmas y cronometro)", abierto:false, desde:null},
