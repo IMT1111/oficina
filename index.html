@@ -96,7 +96,7 @@ textarea,input{width:100%;background:#0a1120;color:var(--txt);border:1px solid v
   padding:10px 11px;border-radius:7px;font-size:16px}
 textarea:focus,input:focus{outline:none;border-color:var(--acc)}
 textarea{resize:vertical;min-height:92px}
-#mic.on{background:var(--bad);color:#fff;animation:pulse 1.1s infinite}
+#mic.on,#micsol.on{background:var(--bad);color:#fff;animation:pulse 1.1s infinite}
 @keyframes pulse{50%{opacity:.55}}
 
 .bar{height:6px;background:#0a1120;border-radius:4px;overflow:hidden;margin-top:9px}
@@ -118,6 +118,13 @@ textarea{resize:vertical;min-height:92px}
 .hd .ch{color:var(--muted);font-size:13px;transition:transform .2s}
 .hilo.ab .hd .ch{transform:rotate(90deg)}
 .hd .unread{width:8px;height:8px;border-radius:50%;background:var(--acc);flex:0 0 auto}
+/* estado de una solicitud: se ve SIN abrirla, que es lo que el mira */
+.hd .est{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  border-radius:11px;padding:4px 9px;flex:0 0 auto;white-space:nowrap}
+.est.pedida{background:#26314d;color:#aebbdd}
+.est.marcha{background:#3a2c12;color:var(--acc)}
+.est.hecha{background:#173d2c;color:var(--ok)}
+.hd .ht .quien{color:var(--muted);font-size:12.5px;font-weight:400;margin-top:3px}
 .body{display:none;padding:0 13px 13px;border-top:1px solid var(--line)}
 .hilo.ab .body{display:block}
 .msg{margin:11px 0;display:flex;flex-direction:column;max-width:90%}
@@ -200,6 +207,23 @@ textarea{resize:vertical;min-height:92px}
   <section class="vista" id="v-proyectos">
     <div class="card"><h2>📋 TUS PROYECTOS</h2><div id="proyectos"></div></div>
     <div class="card"><h2>🔧 ENCARGOS SUELTOS</h2><div id="puntuales"></div></div>
+  </section>
+
+  <!-- ═══ SOLICITUDES ═══ -->
+  <section class="vista" id="v-solicitudes">
+    <div class="card">
+      <h2>📌 LO QUE LE HAS PEDIDO</h2>
+      <div id="solicitudes"></div>
+    </div>
+    <div class="card">
+      <h2>➕ PEDIR ALGO NUEVO</h2>
+      <label>Dicta o escribe lo que quieres que hagan</label>
+      <textarea id="txtsol" placeholder="Toca el micro de tu teclado y habla."></textarea>
+      <div class="row">
+        <button class="sec estrecho" id="micsol" title="Dictar">🎤</button>
+        <button class="acc" id="envsol">Pedirlo</button>
+      </div>
+    </div>
   </section>
 
   <!-- ═══ HABLAR ═══ -->
@@ -450,7 +474,7 @@ async function editarBuzon(cambio){
 }
 
 /* ═══ 3 · LOS DATOS ═══════════════════════════════════════════ */
-function buzonVacio(){ return {v:1, actualizado:ahora(), hilos:[]}; }
+function buzonVacio(){ return {v:1, actualizado:ahora(), hilos:[], solicitudes:[]}; }
 function estadoVacio(){ return {v:1, actualizado:null, agentes:[], espera_de_ti:[]}; }
 
 async function cargar(){
@@ -460,6 +484,10 @@ async function cargar(){
   S.ms = Math.round((window.performance ? performance.now() : Date.now()) - t0);
   S.estado = e.datos || estadoVacio(); S.revEstado = e.rev;
   S.buzon  = b.datos || buzonVacio();  S.revBuzon  = b.rev;
+  // Un buzon escrito por la version vieja no trae "solicitudes": sin esta linea
+  // la seccion nueva reventaria en el primer unshift.
+  if(!Array.isArray(S.buzon.hilos))       S.buzon.hilos = [];
+  if(!Array.isArray(S.buzon.solicitudes)) S.buzon.solicitudes = [];
   S.robots = rb.datos;
   if(!b.datos) S.revBuzon = await subir(F_BUZON, S.buzon, null);
   guardarCache(); pintar();
@@ -509,19 +537,57 @@ async function cerrarHilo(hid, sid){
   const nodo = document.getElementById("h_"+(sid||hid));
   if(nodo) nodo.classList.add("cerrando");
   await editarBuzon(bz=>{
-    if(sid){
-      const h = bz.hilos.find(x=>x.id===hid);
-      if(h) h.subhilos = (h.subhilos||[]).filter(s=>s.id!==sid);
-    }else{
-      bz.hilos = bz.hilos.filter(x=>x.id!==hid);
-    }
+    ["hilos","solicitudes"].forEach(k=>{
+      const arr = bz[k] || [];
+      if(sid){
+        const h = arr.find(x=>x.id===hid);
+        if(h) h.subhilos = (h.subhilos||[]).filter(s=>s.id!==sid);
+      }else{
+        bz[k] = arr.filter(x=>x.id!==hid);
+      }
+    });
   });
   setTimeout(pintar, 320); toast("Terminado, fuera de la lista");
 }
+// Los temas de hablar (T-) y las solicitudes (S-) viven en dos listas, pero se
+// contestan y se cierran igual: se busca en las dos y manda el id.
 function buscarHilo(bz, hid, sid){
-  const h = bz.hilos.find(x=>x.id===hid); if(!h) return null;
+  const todos = ((bz.hilos)||[]).concat((bz.solicitudes)||[]);
+  const h = todos.find(x=>x.id===hid); if(!h) return null;
   if(!sid) return h;
   return (h.subhilos||[]).find(s=>s.id===sid) || null;
+}
+
+/* ── SOLICITUDES: lo que le pide al capataz, con su estado ─────── */
+function solicitudNueva(t){
+  return {
+    id: idCorto("S-"), titulo: titulo(t), de:"dueno",
+    estado:"pedida", quien:"", avance:"",
+    creado: ahora(), actualizado: ahora(), nuevo_para_agente:true,
+    mensajes:[{de:"dueno", texto:t, ts:ahora()}], subhilos:[]
+  };
+}
+async function pedir(){
+  const t = $("#txtsol").value.trim();
+  if(!t){ toast("Escribe o dicta lo que quieres pedir"); return; }
+  $("#envsol").disabled = true;
+  try{
+    const s = solicitudNueva(t);
+    await editarBuzon(bz=>{ (bz.solicitudes = bz.solicitudes||[]).unshift(s); });
+    $("#txtsol").value=""; S.abiertos[s.id]=true; pintar(); toast("Pedido ✓");
+  }catch(e){ toast(e.message, true); }
+  $("#envsol").disabled = false;
+}
+async function pedirDentro(hid, texto){
+  const t = (texto||"").trim();
+  if(!t){ toast("Escribe primero lo que quieres pedir dentro"); return; }
+  const s = solicitudNueva(t);
+  await editarBuzon(bz=>{
+    const p = (bz.solicitudes||[]).find(x=>x.id===hid); if(!p) return;
+    (p.subhilos = p.subhilos||[]).push(s);
+    p.nuevo_para_agente = true; p.actualizado = ahora();
+  });
+  S.abiertos[hid]=true; S.abiertos[s.id]=true; pintar(); toast("Añadido dentro ✓");
 }
 
 /* ═══ 5 · LAS SECCIONES (la barra de arriba) ══════════════════ */
@@ -529,11 +595,13 @@ const VISTAS = [
   {id:"inicio",    nombre:"Inicio"},
   {id:"robots",    nombre:"Robots",    cuenta:()=> nRobots()},
   {id:"proyectos", nombre:"Proyectos", cuenta:()=> nAgentes()},
+  {id:"solicitudes", nombre:"Solicitudes", cuenta:()=> nSolicitudes()},
   {id:"hablar",    nombre:"Hablar",    cuenta:()=> nHilos()},
   {id:"ajustes",   nombre:"Ajustes"}
 ];
 function nAgentes(){ return ((S.estado&&S.estado.agentes)||[]).length; }
 function nHilos(){ return ((S.buzon&&S.buzon.hilos)||[]).filter(h=>h.estado!=="cerrado").length; }
+function nSolicitudes(){ return ((S.buzon&&S.buzon.solicitudes)||[]).filter(s=>s.estado!=="hecha").length; }
 function nRobots(){ return (((S.robots&&S.robots.grupos)||[]).reduce((s,g)=> s+g.robots.length, 0)); }
 
 function pintarNav(){
@@ -561,6 +629,7 @@ function pintar(){
   pintarResumen();
   pintarProyectos();
   pintarRobots();
+  pintarSolicitudes();
   pintarHilos();
   pintarCfg();
   pintarNav();
@@ -759,6 +828,85 @@ async function mandarRobot(id, que, nombre){
   }catch(e){ delete S.pedidas[id]; toast(e.message, true); pintar(); }
 }
 
+/* ── SOLICITUDES ─────────────────────────────────────────────── */
+// Tres estados y ninguno mas: pedida (nadie la ha cogido), en marcha (alguien
+// esta con ella) y hecha (terminada). Los escribe el capataz en buzon.json.
+const ETIQ_EST  = {"pedida":"pedida", "en marcha":"en marcha", "hecha":"hecha"};
+const CLASE_EST = {"pedida":"pedida", "en marcha":"marcha",    "hecha":"hecha"};
+function estadoDe(s){ return ETIQ_EST[s && s.estado] ? s.estado : "pedida"; }
+
+function pintarMensajes(b, h){
+  (h.mensajes||[]).forEach(m=>{
+    const mm = el("div","msg "+(m.de==="dueno"?"yo":"cap"));
+    mm.appendChild(el("div","who", m.de==="dueno" ? "Tú" : (m.de||"capataz")));
+    mm.appendChild(el("div","bu", esc(m.texto)));
+    if(m.ts) mm.appendChild(el("div","ts", cuando(m.ts)));
+    b.appendChild(mm);
+  });
+}
+
+function pintarSolicitudes(){
+  const c = $("#solicitudes"); if(!c) return;
+  c.innerHTML="";
+  const ss = (S.buzon && S.buzon.solicitudes) || [];
+  if(!ss.length){
+    c.appendChild(el("div","vacio","Todavía no has pedido nada. Escríbelo abajo y el capataz lo reparte."));
+    return;
+  }
+  // Las hechas, al final: lo que espera es lo que importa.
+  const orden = ss.slice().sort((a,b)=> (estadoDe(a)==="hecha") - (estadoDe(b)==="hecha"));
+  orden.forEach(s => c.appendChild(nodoSolicitud(s, null)));
+}
+
+function nodoSolicitud(s, padreId){
+  const sid = padreId ? s.id : null;
+  const hid = padreId || s.id;
+  const est = estadoDe(s);
+  const d = el("div","hilo"+(S.abiertos[s.id]?" ab":""));
+  d.id = "h_"+s.id;
+
+  const hd = el("div","hd");
+  hd.appendChild(el("span","cid", s.id));
+  const t = el("div","ht");
+  t.appendChild(el("div", null, esc(s.titulo)));
+  const pie = [];
+  if(s.quien)  pie.push("lo lleva " + s.quien);
+  if(s.avance) pie.push(s.avance);
+  if(!pie.length && est==="pedida") pie.push("todavía sin repartir");
+  if(pie.length) t.appendChild(el("div","quien", pie.join(" · ")));
+  hd.appendChild(t);
+  hd.appendChild(el("span","est "+CLASE_EST[est], ETIQ_EST[est]));
+  hd.appendChild(el("span","ch","▶"));
+  hd.onclick = ()=>{ S.abiertos[s.id] = !S.abiertos[s.id]; d.classList.toggle("ab"); };
+  d.appendChild(hd);
+
+  const b = el("div","body");
+  pintarMensajes(b, s);
+  (s.subhilos||[]).forEach(x=>{
+    const w = el("div","subh");
+    w.appendChild(nodoSolicitud(x, s.id));
+    b.appendChild(w);
+  });
+  const ta = el("textarea","resp"); ta.placeholder = "Añade algo o pide otra cosa dentro…";
+  ta.style.minHeight = "60px"; ta.style.marginTop="10px";
+  b.appendChild(ta);
+  const acc = el("div","row");
+  const bs = el("button","sec","Enviar");
+  bs.onclick = ()=>{ const x=ta.value; ta.value=""; responder(hid, x, sid); };
+  acc.appendChild(bs);
+  if(!padreId){
+    const bd = el("button","sec","+ Dentro de esta");
+    bd.onclick = ()=>{ const x=ta.value; ta.value=""; pedirDentro(s.id, x).catch(e=>toast(e.message,true)); };
+    acc.appendChild(bd);
+  }
+  const bf = el("button","sec fin","✓ Quitar");
+  bf.onclick = ()=> cerrarHilo(hid, sid);
+  acc.appendChild(bf);
+  b.appendChild(acc);
+  d.appendChild(b);
+  return d;
+}
+
 /* ── HILOS ───────────────────────────────────────────────────── */
 function pintarHilos(){
   const c = $("#hilos"); c.innerHTML="";
@@ -784,13 +932,7 @@ function nodoHilo(h, padreId){
   d.appendChild(hd);
 
   const b = el("div","body");
-  (h.mensajes||[]).forEach(m=>{
-    const mm = el("div","msg "+(m.de==="dueno"?"yo":"cap"));
-    mm.appendChild(el("div","who", m.de==="dueno" ? "Tú" : (m.de||"capataz")));
-    mm.appendChild(el("div","bu", esc(m.texto)));
-    if(m.ts) mm.appendChild(el("div","ts", cuando(m.ts)));
-    b.appendChild(mm);
-  });
+  pintarMensajes(b, h);
   if(h.pregunta && !h.pregunta.respuesta){
     const p = el("div","preg");
     p.appendChild(el("div","p", esc(h.pregunta.texto)));
@@ -822,20 +964,24 @@ function nodoHilo(h, padreId){
 
 /* ═══ 7 · MICRÓFONO ═══════════════════════════════════════════ */
 let rec=null;
-function micro(){
+// Dos cajas de dictado (hablar y solicitudes) y un solo micro: se le dice a cual
+// escribe. Antes escribia siempre en #txt, asi que el micro de solicitudes
+// habria dictado en la caja equivocada.
+function micro(idT, idB){
+  idT = idT || "#txt"; idB = idB || "#mic";
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if(!SR){ $("#txt").focus(); toast("Usa el micro de tu teclado"); return; }
+  if(!SR){ $(idT).focus(); toast("Usa el micro de tu teclado"); return; }
   if(rec){ rec.stop(); return; }
   rec = new SR(); rec.lang="es-ES"; rec.continuous=true; rec.interimResults=true;
-  const base = $("#txt").value ? $("#txt").value+" " : "";
+  const base = $(idT).value ? $(idT).value+" " : "";
   rec.onresult = ev=>{
     let t="";
     for(let i=ev.resultIndex;i<ev.results.length;i++) t += ev.results[i][0].transcript;
-    $("#txt").value = base + t;
+    $(idT).value = base + t;
   };
-  rec.onend = ()=>{ rec=null; $("#mic").classList.remove("on"); };
-  rec.onerror = ()=>{ rec=null; $("#mic").classList.remove("on"); toast("Usa el micro de tu teclado", true); };
-  rec.start(); $("#mic").classList.add("on"); toast("Habla…");
+  rec.onend = ()=>{ rec=null; $(idB).classList.remove("on"); };
+  rec.onerror = ()=>{ rec=null; $(idB).classList.remove("on"); toast("Usa el micro de tu teclado", true); };
+  rec.start(); $(idB).classList.add("on"); toast("Habla…");
 }
 
 /* ═══ 8 · AJUSTES ═════════════════════════════════════════════ */
@@ -877,18 +1023,36 @@ function ejemplo(){
     {id:"T-4b02", titulo:"Repaso de dos minutos sin hablar", de:"capataz", estado:"abierto", creado:new Date(Date.now()-90*60000).toISOString(),
      mensajes:[{de:"capataz", texto:"Hoy la app de hebreo solo sirve con la sesión de voz abierta. Propongo tarjetas: sale la palabra, dices si la sabes.", ts:new Date(Date.now()-90*60000).toISOString()}],
      pregunta:{texto:"¿Doce tarjetas por vuelta?", opciones:["Sí, doce","Más cortas"]}, subhilos:[]}
+  ], solicitudes:[
+    {id:"S-7c31", titulo:"Que la lista de libros se pueda ordenar a mano", de:"dueno",
+     estado:"en marcha", quien:"Omnia Books", avance:"la mitad hecha, falta guardarlo",
+     creado:new Date(Date.now()-3*3600000).toISOString(), actualizado:new Date(Date.now()-20*60000).toISOString(),
+     mensajes:[{de:"dueno", texto:"Quiero arrastrar los libros y que se queden donde los pongo.", ts:new Date(Date.now()-3*3600000).toISOString()},
+               {de:"capataz", texto:"Se lo he dado a Omnia Books. Va por la mitad.", ts:new Date(Date.now()-20*60000).toISOString()}],
+     subhilos:[
+       {id:"S-7c32", titulo:"Y que se pueda deshacer", de:"dueno", estado:"pedida", quien:"", avance:"",
+        creado:new Date(Date.now()-2*3600000).toISOString(), actualizado:new Date(Date.now()-2*3600000).toISOString(),
+        mensajes:[{de:"dueno", texto:"Si me equivoco al arrastrar, poder deshacerlo.", ts:new Date(Date.now()-2*3600000).toISOString()}], subhilos:[]}
+     ]},
+    {id:"S-2a90", titulo:"Poner el número del hebreo básico en la pantalla de progreso", de:"dueno",
+     estado:"hecha", quien:"Proyecto Flutter", avance:"ya sale «sabes 40 de 255»",
+     creado:new Date(Date.now()-26*3600000).toISOString(), actualizado:new Date(Date.now()-90*60000).toISOString(),
+     mensajes:[{de:"capataz", texto:"Hecho y publicado.", ts:new Date(Date.now()-90*60000).toISOString()}], subhilos:[]}
   ]};
-  S.abiertos = {"T-4b02":true};
+  S.abiertos = {"T-4b02":true, "S-7c31":true};
   pintar();
 }
 
 /* ═══ 10 · ARRANQUE ═══════════════════════════════════════════ */
 $("#env").onclick   = enviar;
-$("#mic").onclick   = micro;
+$("#mic").onclick   = ()=> micro("#txt","#mic");
+$("#envsol").onclick= pedir;
+$("#micsol").onclick= ()=> micro("#txtsol","#micsol");
+$("#txtsol").addEventListener("keydown", e=>{ if(e.key==="Enter" && (e.ctrlKey||e.metaKey)) pedir(); });
 $("#brec").onclick  = ()=> cargar().then(()=>toast("Al día ✓")).catch(e=>toast(e.message,true));
 $("#bconn").onclick = ()=> conectar().catch(e=>toast(e.message,true));
 $("#bdemo").onclick = ()=>{ ejemplo(); ver("inicio"); };
-$("#bnuevo").onclick = ()=>{ ver("inicio"); $("#txt").focus(); };
+$("#bnuevo").onclick = ()=>{ ver("solicitudes"); $("#txtsol").focus(); };
 $("#txt").addEventListener("keydown", e=>{ if(e.key==="Enter" && (e.ctrlKey||e.metaKey)) enviar(); });
 
 // La direccion que hay que dar de alta en Dropbox sale del MISMO sitio que usa
