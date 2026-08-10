@@ -163,6 +163,48 @@ textarea{resize:vertical;min-height:92px}
 #toast.on{transform:translateX(-50%) translateY(0)}
 #toast.err{border-color:var(--bad);color:#ffd7d7}
 
+/* ---------- la barra de filtros de ROBOTS ----------
+   Copiada del panel del ordenador (_panel_robots.ps1, TIPOS): las mismas
+   ocho, con el mismo nombre y en el mismo orden, y se ARRASTRAN para
+   cambiarlas de sitio. Orden suya del 10/08: "si ya funciona y nos gusta,
+   por que lo vamos a cambiar". */
+.barfil{display:flex;gap:7px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:none}
+.barfil::-webkit-scrollbar{display:none}
+.fil{background:#1c2947;color:#c6d0ec;border:1px solid var(--line);border-radius:14px;
+  padding:7px 13px;font-size:13px;white-space:nowrap;flex:0 0 auto;touch-action:none}
+.fil.filon{background:var(--acc);color:#1a1206;border-color:var(--acc);font-weight:600}
+.fil.arrastrando{opacity:.5;transform:scale(1.06)}
+.fil .n{opacity:.7;font-size:11.5px;margin-left:4px}
+/* la chincheta de cada robot: igual que en el panel del ordenador */
+.pin{flex:0 0 auto;background:none;font-size:17px;padding:0 4px;opacity:.28;line-height:1}
+.pin.on{opacity:1}
+.rob{display:flex;align-items:center;gap:10px}
+.rob .nm{flex:1;min-width:0}
+.rob .sec{flex:0 0 auto}
+/* ---------- categorias que se abren, como un periodico ---------- */
+.cat{background:var(--panel2);border:1px solid var(--line);border-radius:9px;margin-bottom:10px;overflow:hidden}
+.cat>.ch{display:flex;align-items:center;gap:9px;padding:12px 13px;cursor:pointer}
+.cat>.ch b{flex:1;font-size:15px}
+.cat>.ch .cn{background:#1c2947;color:#c6d0ec;border-radius:11px;padding:1px 8px;font-size:11.5px}
+.cat>.ch .fl{color:var(--acc);transition:transform .15s}
+.cat.ab>.ch .fl{transform:rotate(90deg)}
+.cat>.cu{display:none;padding:0 11px 11px}
+.cat.ab>.cu{display:block}
+/* un texto largo cortado que se abre entero al tocarlo */
+.mas{color:var(--acc2);font-size:13px;margin-top:6px;cursor:pointer;display:inline-block}
+/* un enlace de esta pagina a otra parte de esta pagina */
+.ir{color:var(--acc2);font-size:13.5px;cursor:pointer;display:inline-block;margin-top:8px}
+.ir:active{opacity:.6}
+a.dbx{color:var(--acc2);text-decoration:none;word-break:break-word}
+/* el explicador de una seccion: una linea que dice PARA QUE sirve esto */
+.quees{color:var(--muted);font-size:13.5px;line-height:1.5;margin:0 0 12px}
+.quees b{color:var(--txt)}
+/* mover algo de sitio con dos flechas, que en un movil no falla nunca */
+.mv{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--line)}
+.mv:last-child{border-bottom:0}
+.mv b{flex:1;font-size:14.5px;font-weight:500}
+.mv button{background:#1c2947;border:1px solid var(--line);width:38px;height:38px;font-size:15px}
+
 @media(min-width:900px){
   main{padding:22px 26px 40px}
   .top h1{font-size:23px}
@@ -194,29 +236,69 @@ textarea{resize:vertical;min-height:92px}
       <div id="resumen"></div>
     </div>
     <div class="card">
-      <h2>📱 HABLAR CON EL CAPATAZ</h2>
-      <label>Dicta o escribe lo que quieras pedir</label>
+      <h2>📱 PEDIR O CONTAR ALGO</h2>
+      <p class="quees">Va a parar a <b>Mensajes</b>, donde puedes ver luego
+      quién lo ha cogido y cómo va.</p>
       <textarea id="txt" placeholder="Toca el micro de tu teclado y habla."></textarea>
       <div class="row">
         <button class="sec estrecho" id="mic" title="Dictar">🎤</button>
-        <button class="acc" id="env">Enviar al capataz</button>
+        <button class="acc" id="env">Enviarlo</button>
       </div>
     </div>
   </section>
 
-  <!-- ═══ ROBOTS ═══ -->
+  <!-- ═══ ROBOTS ═══
+       Es la pestaña TUS ROBOTS del panel del ordenador (_panel_robots.ps1)
+       tal cual: el mismo título, el mismo buscador, las mismas chinchetas y
+       la misma barra de filtros que se arrastran. Orden suya del 10/08:
+       "si ya funciona y nos gusta, ¿por qué lo vamos a cambiar?". -->
   <section class="vista" id="v-robots">
-    <div class="card" id="c-puente"><h2>🖥️ EL ORDENADOR</h2><div id="puente"></div></div>
+    <div class="card" id="c-puente">
+      <h2>🖥️ TU ORDENADOR DE CASA</h2>
+      <p class="quees">Los robots no se abren en el móvil: se abren <b>en tu
+      ordenador</b>, el que tienes en casa. Aquí te digo si está encendido y
+      atento a lo que le pidas desde aquí.</p>
+      <div id="puente"></div>
+    </div>
+
+    <div class="card">
+      <h2>🤖 TUS ROBOTS</h2>
+      <p class="quees" id="robCuenta"></p>
+      <div class="row">
+        <input id="rbusca" placeholder="Buscar un robot por su nombre…">
+        <button class="sec estrecho" id="rvolver" title="Volver a mirar">⟳</button>
+      </div>
+      <div class="barfil" id="rfiltros"></div>
+      <p class="quees" style="margin:0">Arrastra los botones de arriba para
+      ponerlos en el orden que quieras. La chincheta 📌 sube un robot al
+      principio de la lista.</p>
+    </div>
+
     <div id="robots"></div>
+
     <div class="card" id="c-hechas" style="display:none">
-      <h2>ÚLTIMO QUE HIZO</h2><div id="hechas"></div>
+      <h2>LO ÚLTIMO QUE HIZO</h2><div id="hechas"></div>
     </div>
   </section>
 
   <!-- ═══ PROYECTOS ═══ -->
   <section class="vista" id="v-proyectos">
-    <div class="card"><h2>📋 TUS PROYECTOS</h2><div id="proyectos"></div></div>
-    <div class="card"><h2>🔧 ENCARGOS SUELTOS</h2><div id="puntuales"></div></div>
+    <div class="card">
+      <h2>📋 TUS PROYECTOS</h2>
+      <p class="quees">Cada uno es una aplicación. Las piezas que van
+      <b>metidas debajo con una raya naranja al lado son MÓDULOS</b> de esa
+      misma aplicación, no aplicaciones aparte. Toca <b>Ver más</b> para saber
+      de qué está hecho, en qué fase va y qué le falta.</p>
+      <div class="row" style="margin-top:0">
+        <button class="sec" id="pref">⟳ Volver a mirar</button>
+      </div>
+      <p class="quees" id="pfecha" style="margin:10px 0 0"></p>
+    </div>
+    <div class="card"><h2>📱 APLICACIONES</h2><div id="proyectos"></div></div>
+    <div class="card"><h2>🔧 ENCARGOS SUELTOS</h2>
+      <p class="quees">No son aplicaciones: son agentes a los que se les manda
+      un recado (revisar algo, arreglar algo) y cuando lo terminan paran.</p>
+      <div id="puntuales"></div></div>
   </section>
 
   <!-- ═══ LO HECHO ═══
@@ -225,11 +307,14 @@ textarea{resize:vertical;min-height:92px}
   <section class="vista" id="v-hecho">
     <div class="card">
       <h2>✅ LO ÚLTIMO QUE HAN HECHO</h2>
+      <p class="quees">Ordenado <b>por aplicación</b>. Toca una para abrirla, y
+      toca cualquier línea para leerla entera.</p>
       <div id="hechoLista"></div>
     </div>
     <div class="card">
       <h2>📱 PARA INSTALAR EN EL MÓVIL</h2>
-      <p class="sub">Están en Dropbox › APK. Ábrelas desde ahí para instalarlas.</p>
+      <p class="quees">Toca una y se te abre <b>la app de Dropbox</b> en la
+      carpeta donde está. Desde ahí la instalas.</p>
       <div id="hechoApks"></div>
     </div>
     <div class="card">
@@ -257,29 +342,40 @@ textarea{resize:vertical;min-height:92px}
     <div id="mview"></div>
   </section>
 
-  <!-- ═══ SOLICITUDES ═══ -->
-  <section class="vista" id="v-solicitudes">
+  <!-- ═══ MENSAJES ═══
+       Antes eran DOS pestañas, "Solicitudes" y "Hablar", y él no entendía
+       ninguna de las dos ni la diferencia (10/08: "no sé a quién llega ni si
+       se pierde", "+ Tema nuevo me manda a Solicitudes y no lo entiendo").
+       Y tenía razón en lo de perderse: lo que escribía en "Hablar" iba a la
+       lista `hilos` de buzon.json, que NO LA LEÍA NINGÚN AGENTE — solo se lee
+       `solicitudes`, con robots\solicitudes.js. Así que ahora todo lo que
+       escribe es una PETICIÓN, que sí llega, y esta pestaña es una sola. -->
+  <section class="vista" id="v-mensajes">
     <div class="card">
-      <h2>📌 LO QUE LE HAS PEDIDO</h2>
-      <div id="solicitudes"></div>
-    </div>
-    <div class="card">
-      <h2>➕ PEDIR ALGO NUEVO</h2>
-      <label>Dicta o escribe lo que quieres que hagan</label>
+      <h2>➕ PEDIR O CONTAR ALGO</h2>
+      <p class="quees">Escribe lo que sea: una idea, un fallo que has visto o
+      algo que quieres que te hagan. <b>Lo recoge el capataz</b>, que es el
+      agente que reparte el trabajo, y en cuanto alguien lo coge te sale aquí
+      abajo quién lo lleva y cómo va.</p>
+      <label>Dicta o escribe</label>
       <textarea id="txtsol" placeholder="Toca el micro de tu teclado y habla."></textarea>
       <div class="row">
         <button class="sec estrecho" id="micsol" title="Dictar">🎤</button>
-        <button class="acc" id="envsol">Pedirlo</button>
+        <button class="acc" id="envsol">Enviarlo</button>
       </div>
     </div>
-  </section>
-
-  <!-- ═══ HABLAR ═══ -->
-  <section class="vista" id="v-hablar">
     <div class="card">
-      <h2>✉️ LO QUE SE ESTÁ HABLANDO</h2>
+      <h2>📌 LO QUE HAS PEDIDO</h2>
+      <p class="quees">Cada una pasa por tres estados: <b>pedida</b> (nadie la
+      ha cogido todavía), <b>en marcha</b> (alguien está con ella) y
+      <b>hecha</b>. Si ya no la quieres, ábrela y pulsa <b>Borrar</b>.</p>
+      <div id="solicitudes"></div>
+    </div>
+    <div class="card">
+      <h2>✉️ LO QUE TE CUENTAN A TI</h2>
+      <p class="quees">Lo que los agentes te escriben o te preguntan a ti.
+      Contesta aquí mismo: lo leen en cuanto vuelven a mirar.</p>
       <div id="hilos"></div>
-      <div class="row"><button class="sec" id="bnuevo">+ Tema nuevo</button></div>
     </div>
   </section>
 
@@ -291,6 +387,19 @@ textarea{resize:vertical;min-height:92px}
       <div id="cfg"></div>
       <div class="row"><button class="acc" id="bconn">Conectar con Dropbox</button></div>
       <div class="row"><button class="sec" id="bdemo">Ver ejemplo (sin conectar)</button></div>
+    </div>
+    <!-- ═══ TUS PESTAÑAS ═══
+         Encargo suyo del 10/08: poder reordenar las pestañas a su gusto.
+         Con flechas y no arrastrando: en la barra de filtros de Robots el
+         arrastre vale porque son ocho botones pequeños en una fila, pero
+         aquí son filas anchas dentro de una página que se desliza, y
+         arrastrar hacia abajo es justo el gesto de bajar la página. -->
+    <div class="card">
+      <h2>🧭 TUS PESTAÑAS</h2>
+      <p class="quees">Ponlas en el orden que quieras con las flechas. Lo que
+      pongas arriba es lo que te sale primero en la barra de arriba.</p>
+      <div id="ordenPest"></div>
+      <div class="row"><button class="sec" id="pestdef">Dejarlas como estaban</button></div>
     </div>
     <!-- ═══ SI ALGO VA MAL ═══
          La pestaña Diagnóstico del panel del ordenador (PANEL2.html), que
@@ -364,6 +473,20 @@ let S = {
   revEstado:null, revBuzon:null,
   abiertos:{}, vista:"inicio", ms:0, pedidas:{}
 };
+
+/* ── LO QUE EL ELIGE, EN SU MOVIL ──────────────────────────────
+   El orden de las pestañas, el orden de los filtros de robots y las
+   chinchetas son SUYOS y de este teléfono: no viajan a Dropbox, así
+   que no hay que esperar a nadie ni se puede perder por el camino.
+   Una sola clave y un solo sitio: si mañana hay otro gusto que
+   guardar, se le añade un campo aquí y ya está. */
+const GUSTOS = "oficina.gustos.v1";
+const G = (function(){
+  const d = {pestanas:null, filtros:null, pins:[], usados:{}};
+  try{ return Object.assign(d, JSON.parse(localStorage.getItem(GUSTOS)||"{}")); }
+  catch(e){ return d; }
+})();
+function guardarGustos(){ try{ localStorage.setItem(GUSTOS, JSON.stringify(G)); }catch(e){} }
 
 const CACHE = "oficina.cache.v1";
 function guardarCache(){
@@ -582,19 +705,24 @@ async function cargar(){
 }
 
 /* ═══ 4 · ACCIONES DEL DUEÑO ══════════════════════════════════ */
+/* LO QUE ESCRIBE DESDE INICIO VA AL MISMO SITIO QUE LO DE MENSAJES.
+   Antes no: la caja de Inicio metía un "tema" en la lista `hilos` de
+   buzon.json, y esa lista NO LA LEE NINGÚN ROBOT — el único que mira el
+   buzón es robots\solicitudes.js, y solo mira `solicitudes`. O sea que lo
+   que escribía ahí no llegaba a nadie, y por eso decía el 10/08 que no
+   sabía a quién le llegaba ni si se perdía. Se perdía. Ahora las dos
+   cajas hacen una PETICIÓN, que sí se recoge, y se le enseña dónde ha
+   quedado en vez de decirle solo "enviado". */
 async function enviar(){
   const t = $("#txt").value.trim();
   if(!t){ toast("Escribe o dicta algo primero"); return; }
   $("#env").disabled = true;
   try{
-    await editarBuzon(bz=>{
-      bz.hilos.unshift({
-        id: idCorto("T-"), titulo: titulo(t), de:"dueno", estado:"abierto",
-        creado: ahora(), nuevo_para_agente:true,
-        mensajes:[{de:"dueno", texto:t, ts:ahora()}], subhilos:[]
-      });
-    });
-    $("#txt").value=""; pintar(); toast("Enviado al capataz ✓");
+    const s = solicitudNueva(t);
+    await editarBuzon(bz=>{ (bz.solicitudes = bz.solicitudes||[]).unshift(s); });
+    $("#txt").value=""; S.abiertos[s.id]=true; pintar();
+    toast("Apuntado ✓ lo tienes en Mensajes");
+    ver("mensajes", "h_"+s.id);
   }catch(e){ toast(e.message, true); }
   $("#env").disabled = false;
 }
@@ -636,6 +764,26 @@ async function cerrarHilo(hid, sid){
     });
   });
   setTimeout(pintar, 320); toast("Terminado, fuera de la lista");
+}
+/* BORRAR (encargo suyo del 10/08: "no puedo borrar un mensaje"). Es lo
+   mismo que quitarlo de la lista, pero dicho con su palabra y con una
+   pregunta delante: lo que se borra aquí no está en ningún otro sitio. */
+async function borrarHilo(hid, sid, titulo){
+  if(!confirm("¿Borrar «" + titulo + "»?\n\nDesaparece del todo y no se puede recuperar.")) return;
+  const nodo = document.getElementById("h_"+(sid||hid));
+  if(nodo) nodo.classList.add("cerrando");
+  await editarBuzon(bz=>{
+    ["hilos","solicitudes"].forEach(k=>{
+      const arr = bz[k] || [];
+      if(sid){
+        const h = arr.find(x=>x.id===hid);
+        if(h) h.subhilos = (h.subhilos||[]).filter(s=>s.id!==sid);
+      }else{
+        bz[k] = arr.filter(x=>x.id!==hid);
+      }
+    });
+  });
+  setTimeout(pintar, 320); toast("Borrado");
 }
 // Los temas de hablar (T-) y las solicitudes (S-) viven en dos listas, pero se
 // contestan y se cierran igual: se busca en las dos y manda el id.
@@ -679,40 +827,75 @@ async function pedirDentro(hid, texto){
 }
 
 /* ═══ 5 · LAS SECCIONES (la barra de arriba) ══════════════════ */
+/* Una pestaña con un número al lado obliga a preguntarse QUÉ cuenta ese
+   número. Él lo preguntó el 10/08 —"me sale 42 y no sé por qué"— y tenía
+   razón: contaba TODOS los robots que existen, un dato que no cambia
+   nunca y que no le dice nada. Lo que quiere saber de un vistazo es lo
+   que está PASANDO, así que el número es lo que está abierto ahora, y el
+   total se cuenta con palabras dentro de la pestaña. */
 const VISTAS = [
   {id:"inicio",    nombre:"Inicio"},
-  {id:"robots",    nombre:"Robots",    cuenta:()=> nRobots()},
+  {id:"robots",    nombre:"Robots",    cuenta:()=> nAbiertos()},
   {id:"proyectos", nombre:"Proyectos", cuenta:()=> nAgentes()},
   {id:"hecho",     nombre:"Lo hecho"},
   {id:"manual",    nombre:"Manual"},
-  {id:"solicitudes", nombre:"Solicitudes", cuenta:()=> nSolicitudes()},
-  {id:"hablar",    nombre:"Hablar",    cuenta:()=> nHilos()},
+  {id:"mensajes",  nombre:"Mensajes",  cuenta:()=> nSolicitudes() + nHilos()},
   {id:"ajustes",   nombre:"Ajustes"}
 ];
 function nAgentes(){ return ((S.estado&&S.estado.agentes)||[]).length; }
 function nHilos(){ return ((S.buzon&&S.buzon.hilos)||[]).filter(h=>h.estado!=="cerrado").length; }
 function nSolicitudes(){ return ((S.buzon&&S.buzon.solicitudes)||[]).filter(s=>s.estado!=="hecha").length; }
-function nRobots(){ return (((S.robots&&S.robots.grupos)||[]).reduce((s,g)=> s+g.robots.length, 0)); }
+function todosLosRobots(){
+  const g = (S.robots&&S.robots.grupos)||[];
+  return g.reduce((l,x)=> l.concat((x.robots||[]).map(r=>Object.assign({grupo:x.grupo}, r))), []);
+}
+function nRobots(){ return todosLosRobots().length; }
+function nAbiertos(){ return todosLosRobots().filter(r=>r.abierto).length; }
 
+/* Las pestañas van en el orden que él quiera (encargo suyo del 10/08). El
+   orden vive en su móvil; si alguna vez añadimos una pestaña nueva, se
+   pone al final sola en vez de desaparecer. */
+function vistasOrdenadas(){
+  const o = Array.isArray(G.pestanas) ? G.pestanas : [];
+  const puestas = o.map(id => VISTAS.find(v=>v.id===id)).filter(Boolean);
+  VISTAS.forEach(v=>{ if(!puestas.includes(v)) puestas.push(v); });
+  return puestas;
+}
 function pintarNav(){
   const c = $("#navs"); c.innerHTML="";
-  VISTAS.forEach(v=>{
+  vistasOrdenadas().forEach(v=>{
     const b = el("button", "nav"+(S.vista===v.id?" navon":""), v.nombre);
     const n = v.cuenta ? v.cuenta() : 0;
     if(n) b.appendChild(el("span","n", String(n)));
     b.onclick = ()=> ver(v.id);
     c.appendChild(b);
   });
+  const act = c.querySelector(".navon");
+  if(act && act.scrollIntoView) act.scrollIntoView({block:"nearest", inline:"nearest"});
 }
-function ver(id){
+function ver(id, ancla){
   S.vista = id;
   VISTAS.forEach(v=> $("#v-"+v.id).classList.toggle("on", v.id===id));
   $("#titulo").textContent = (VISTAS.find(v=>v.id===id)||{}).nombre || "Inicio";
   pintarNav();
+  // Un enlace que te deja en otra pestaña y te obliga a buscar con el dedo
+  // no es un enlace: se salta hasta la caja de la que se venía hablando.
+  if(ancla) setTimeout(()=>{
+    const e = document.getElementById(ancla);
+    if(e && e.scrollIntoView) e.scrollIntoView({behavior:"smooth", block:"start"});
+  }, 60);
   // El manual se baja la primera vez que lo abre, no al arrancar: son 62 KB
   // de índice que no hacen falta para ver cómo va la fábrica.
   if(id==="manual") arrancarManual();
-  scrollTo({top:0});
+  if(!ancla) scrollTo({top:0});
+}
+/* TODO ENLAZADO (encargo suyo del 10/08): un botón que te lleva a la
+   sección de la que se está hablando, en vez de dejarte buscarla. Se usa
+   así: caja.appendChild(irA("hecho", "Ver lo que ya han terminado")). */
+function irA(id, texto, ancla){
+  const b = el("div","ir", "→ " + texto);
+  b.onclick = ()=> ver(id, ancla);
+  return b;
 }
 
 /* ═══ 6 · PINTAR ══════════════════════════════════════════════ */
@@ -791,6 +974,17 @@ function pintarResumen(){
   b.style.marginTop="10px"; b.style.width="100%";
   b.onclick = ()=> ver("proyectos");
   c.appendChild(b);
+  // TODO ENLAZADO (encargo suyo del 10/08): desde Inicio se llega a
+  // cualquier sitio sin tener que buscar la pestaña con el dedo.
+  const at = el("div"); at.style.marginTop = "4px";
+  const ab = nAbiertos();
+  at.appendChild(irA("robots", ab ? "Tus robots ("+ab+" abiertos ahora)" : "Abrir o cerrar un robot"));
+  at.appendChild(document.createElement("br"));
+  at.appendChild(irA("hecho","Lo que ya han terminado"));
+  at.appendChild(document.createElement("br"));
+  const ns = nSolicitudes();
+  at.appendChild(irA("mensajes", ns ? "Lo que has pedido ("+ns+" sin terminar)" : "Pedir o contar algo"));
+  c.appendChild(at);
 }
 
 function pintarProyectos(){
@@ -800,6 +994,18 @@ function pintarProyectos(){
   lista("#puntuales", ags.filter(a=>a.tipo==="puntual"),
     "Ahora mismo no hay ningún encargo suelto.");
 }
+/* Qué ES cada cosa, dicho con palabras suyas. "constructor" y "modulo" son
+   palabras nuestras: él ve "una aplicación" y "una pieza de dentro". */
+const QUE_ES = {
+  constructor: "una aplicación entera",
+  modulo:      "una pieza de dentro",
+  puntual:     "un encargo suelto"
+};
+const COMO_VA = {
+  va:       "está trabajando",
+  atascado: "se ha quedado atascado",
+  parado:   "ahora mismo no está trabajando"
+};
 function lista(sel, ls, vacio){
   const c = $(sel); c.innerHTML="";
   conAviso(c, S.estado && S.estado.agentes_de, "qué está haciendo cada uno");
@@ -812,7 +1018,12 @@ function lista(sel, ls, vacio){
     const t = el("div","nm"); t.appendChild(el("span","dot "+(a.estado||"parado")));
     t.appendChild(document.createTextNode(esc(a.nombre)));
     d.appendChild(t);
-    if(a.padre) d.appendChild(el("div","dentro", "una parte de "+esc(a.padre)));
+    // De QUÉ es cada uno, siempre, aunque no tenga padre: era lo primero que
+    // le faltaba ("no sé si eso de debajo son módulos o apps sueltas").
+    const que = QUE_ES[a.tipo] || "una parte del trabajo";
+    d.appendChild(el("div","dentro", a.padre
+      ? que + " de " + esc(a.padre) + (a.hecha_con ? " · " + esc(a.hecha_con) : "")
+      : que + (a.hecha_con ? " · hecha con " + esc(a.hecha_con) : "")));
     if(a.que) d.appendChild(el("div","est", esc(a.que)));
     const m = el("div","m");
     if(a.avance) m.appendChild(el("span",null,esc(a.avance)));
@@ -824,6 +1035,37 @@ function lista(sel, ls, vacio){
       d.appendChild(bar);
       d.appendChild(el("div","falta", p>=100 ? "Terminado" : "Le falta el "+(100-p)+"%"));
     }
+
+    /* EL BOTÓN "VER MÁS" (encargo suyo del 10/08). Fuera se queda lo justo
+       para saber si algo va mal; dentro, todo lo que un agente escribe de
+       su proyecto: en qué fase va, qué le falta, con qué está hecho y
+       cuándo se supo. Cerrado por defecto: doce proyectos abiertos a la vez
+       es justo lo que él llamaba "una frase cortada". */
+    const cu = el("div"); cu.style.display = S.abiertos["p_"+a.nombre] ? "" : "none";
+    const linea = (k,v)=>{ if(!v) return; const f = el("div","m"); f.appendChild(el("span",null, k+": "+v)); cu.appendChild(f); };
+    linea("Qué es", que + (a.padre ? " de " + esc(a.padre) : ""));
+    linea("Hecha con", a.hecha_con && esc(a.hecha_con));
+    linea("Cómo va", COMO_VA[a.estado] || esc(a.estado||""));
+    linea("En qué fase", esc(a.fase || a.avance || ""));
+    linea("Qué le falta", esc(a.falta || a.que || ""));
+    linea("Se supo", a.desde ? cuando(a.desde) : "");
+    if(!a.padre){
+      const hijos = ((S.estado&&S.estado.agentes)||[]).filter(x=>x.padre===a.nombre);
+      if(hijos.length) linea("Piezas de dentro", hijos.length + " (" + hijos.map(x=>x.nombre).join(", ") + ")");
+    }
+    cu.appendChild(irA("hecho","Lo último que ha terminado"));
+    cu.appendChild(document.createTextNode(" "));
+    cu.appendChild(irA("manual","Sus papeles en el Manual"));
+
+    const mas = el("div","mas", S.abiertos["p_"+a.nombre] ? "Ver menos ▲" : "Ver más ▼");
+    mas.onclick = ()=>{
+      const ab = !S.abiertos["p_"+a.nombre];
+      S.abiertos["p_"+a.nombre] = ab;
+      cu.style.display = ab ? "" : "none";
+      mas.textContent = ab ? "Ver menos ▲" : "Ver más ▼";
+    };
+    d.appendChild(mas);
+    d.appendChild(cu);
     c.appendChild(d);
   });
 }
@@ -835,33 +1077,80 @@ function lista(sel, ls, vacio){
 function pintarHecho(){
   const h = (S.estado && S.estado.hecho) || {};
 
+  /* POR CATEGORÍAS Y SE ABRE, COMO UN PERIÓDICO (encargo suyo del 10/08).
+     Antes salía una lista corrida donde cada línea era el mensaje de un
+     commit cortado a la mitad: "mis bots: …". Ahora se agrupa por la
+     aplicación a la que pertenece, se abre la que le interese, y cada
+     línea se abre entera al tocarla. La primera, abierta; las demás,
+     cerradas: se ve de qué hay noticias sin bajar media pantalla. */
   const c = $("#hechoLista"); c.innerHTML="";
   const cs = h.commits || [];
   conAviso(c, h.commits_de, "qué se ha terminado");
   if(!cs.length) c.appendChild(el("div","vacio","Todavía no hay nada terminado que enseñar."));
+  const cats = [];
   cs.forEach(x=>{
-    const d = el("div","mini");
-    d.appendChild(el("div","nm", esc(x.texto)));
-    const m = el("div","m");
-    m.appendChild(el("span",null, esc(x.donde)));
-    m.appendChild(el("span",null, cuando(x.ts)));
-    d.appendChild(m);
-    c.appendChild(d);
+    const k = esc(x.donde) || "sin nombre";
+    let g = cats.find(y=>y.k===k);
+    if(!g){ g = {k:k, ls:[]}; cats.push(g); }
+    g.ls.push(x);
   });
+  cats.forEach((g,i)=>{
+    const clave = "cat_"+g.k;
+    if(S.abiertos[clave]===undefined) S.abiertos[clave] = (i===0);
+    const box = el("div","cat"+(S.abiertos[clave]?" ab":""));
+    const ch = el("div","ch");
+    ch.appendChild(el("span","fl","▶"));
+    ch.appendChild(el("b", null, g.k));
+    ch.appendChild(el("span","cn", String(g.ls.length)));
+    ch.onclick = ()=>{ S.abiertos[clave] = !S.abiertos[clave]; box.classList.toggle("ab"); };
+    box.appendChild(ch);
+    const cu = el("div","cu");
+    g.ls.forEach((x,j)=>{
+      const d = el("div","mini");
+      const t = esc(x.texto);
+      const corto = t.length > 90 ? t.slice(0,88) + "…" : t;
+      const nm = el("div","nm", corto);
+      d.appendChild(nm);
+      if(t.length > 90){
+        const mas = el("div","mas","Leerlo entero");
+        mas.onclick = ()=>{ nm.textContent = t; mas.remove(); };
+        d.appendChild(mas);
+      }
+      d.appendChild(el("div","m")).appendChild(el("span",null, cuando(x.ts)));
+      cu.appendChild(d);
+    });
+    box.appendChild(cu);
+    c.appendChild(box);
+  });
+  c.appendChild(irA("proyectos","Ver cómo va cada aplicación"));
 
+  /* LAS APK, CON ENLACE QUE ABRE DROPBOX (encargo suyo del 10/08: "que me
+     salgan enlaces que me abran la app de Dropbox en esa carpeta"). En un
+     móvil con Dropbox instalado, una dirección www.dropbox.com/home/… la
+     coge la propia app y te deja EN la carpeta; sin ella, se abre la web y
+     también funciona. Con ?preview=<archivo> te deja encima del archivo. */
   const a = $("#hechoApks"); a.innerHTML="";
   const as = h.apks || [];
   if(!as.length) a.appendChild(el("div","vacio","Todavía no hay ninguna aplicación preparada."));
   as.forEach(x=>{
     const d = el("div","mini");
     d.appendChild(el("div","nm", esc(x.nombre)));
-    d.appendChild(el("div","est", esc(x.archivo)));
+    const lnk = el("a","dbx", esc(x.archivo));
+    lnk.href = "https://www.dropbox.com/home/APK?preview=" + encodeURIComponent(x.archivo);
+    lnk.target = "_blank"; lnk.rel = "noopener";
+    const w = el("div","est"); w.appendChild(lnk); d.appendChild(w);
     const m = el("div","m");
     m.appendChild(el("span",null, cuando(x.ts)));
     if(x.mb) m.appendChild(el("span",null, x.mb+" MB"));
     d.appendChild(m);
     a.appendChild(d);
   });
+  if(as.length){
+    const f = el("a","dbx","→ Abrir la carpeta APK en Dropbox");
+    f.href = "https://www.dropbox.com/home/APK"; f.target="_blank"; f.rel="noopener";
+    f.style.display="inline-block"; f.style.marginTop="10px"; f.style.fontSize="13.5px";
+    a.appendChild(f);
+  }
 
   const r = $("#hechoRitmo"); r.innerHTML="";
   const rs = h.ritmo || [];
@@ -927,29 +1216,164 @@ function pintarRobots(){
     ch.appendChild(d);
   });
 
-  const grupos = (r && r.grupos) || [];
-  if(!grupos.length && !r){
-    c.appendChild(el("div","card")).appendChild(el("div","vacio",
+  const todos = todosLosRobots();
+  const abiertos = todos.filter(x=>x.abierto).length;
+
+  // El número de la pestaña son los ABIERTOS; el total, con palabras, aquí.
+  const q = $("#robCuenta");
+  if(q) q.textContent = !todos.length
+    ? "Aquí saldrán los mismos robots que tienes en el Escritorio del ordenador."
+    : "Tienes " + todos.length + " robots" +
+      (abiertos ? ", y ahora mismo hay " + abiertos + " abierto" + (abiertos>1?"s":"") + "."
+                : ". Ahora mismo no hay ninguno abierto.");
+
+  pintarFiltrosRobots();
+
+  if(!todos.length){
+    if(!r) c.appendChild(el("div","card")).appendChild(el("div","vacio",
       "Aquí saldrán los mismos robots que tienes en el Escritorio, para abrirlos y cerrarlos desde el móvil."));
     return;
   }
-  grupos.forEach(g=>{
-    const card = el("div","card");
-    card.appendChild(el("h2", null, esc(g.grupo)));
-    g.robots.forEach(x=>{
-      const d = el("div","mini");
-      d.appendChild(el("div","nm", esc(x.nombre)));
-      if(x.abierto) d.appendChild(el("div","est","abierto "+cuando(x.desde)));
-      const pedida = S.pedidas[x.id];
-      if(pedida) d.appendChild(el("div","est", pedida));
-      const fila = el("div","row");
-      const bt = el("button", "sec"+(x.abierto?" fin":""), x.abierto ? "Cerrar" : "Abrir");
-      bt.onclick = ()=>{ bt.disabled=true; mandarRobot(x.id, x.abierto?"cerrar":"abrir", x.nombre); };
-      fila.appendChild(bt); d.appendChild(fila);
-      card.appendChild(d);
-    });
-    c.appendChild(card);
+
+  const busca = plano(($("#rbusca") && $("#rbusca").value) || "");
+  let ls = todos.filter(x=> pasaFiltro(x) && (!busca || plano(x.nombre).includes(busca)));
+
+  // El mismo orden que el panel del ordenador: primero lo que está abierto,
+  // luego lo que él marcó con la chincheta, y el resto detrás.
+  ls.sort((a,b)=>
+    (b.abierto?1:0)-(a.abierto?1:0) ||
+    (fijado(b)?1:0)-(fijado(a)?1:0) ||
+    (G.usados[b.id]||0)-(G.usados[a.id]||0) ||
+    a.nombre.localeCompare(b.nombre));
+
+  const card = el("div","card");
+  card.appendChild(el("h2", null, cabeceraFiltro()));
+  if(!ls.length){
+    card.appendChild(el("div","vacio", busca
+      ? "Ningún robot se llama así."
+      : "Aquí no hay ninguno ahora mismo. Prueba con TODOS."));
+  }
+  ls.forEach(x=>{
+    const d = el("div","mini rob");
+    const pin = el("button","pin"+(fijado(x)?" on":""), "📌");
+    pin.title = fijado(x) ? "Quitarle la chincheta" : "Ponerle la chincheta y subirlo arriba";
+    pin.onclick = ()=>{ chincheta(x.id); pintarRobots(); };
+    d.appendChild(pin);
+
+    const nm = el("div","nm");
+    nm.appendChild(el("div", null, esc(x.nombre)));
+    if(x.abierto) nm.appendChild(el("div","est","abierto "+cuando(x.desde)));
+    const pedida = S.pedidas[x.id];
+    if(pedida) nm.appendChild(el("div","est", pedida));
+    d.appendChild(nm);
+
+    const bt = el("button", "sec"+(x.abierto?" fin":""), x.abierto ? "Cerrar" : "Abrir");
+    bt.onclick = ()=>{ bt.disabled=true; mandarRobot(x.id, x.abierto?"cerrar":"abrir", x.nombre); };
+    d.appendChild(bt);
+    card.appendChild(d);
   });
+  c.appendChild(card);
+  const pie = el("div","card");
+  pie.appendChild(el("div","quees","Los robots los abre tu ordenador de casa. Si quieres ver lo que han ido dejando hecho:"));
+  pie.appendChild(irA("hecho","Lo que ya está terminado"));
+  c.appendChild(pie);
+}
+
+/* ── LA BARRA DE FILTROS, LA MISMA QUE EN EL ORDENADOR ─────────
+   Los mismos ocho de _panel_robots.ps1 ($TIPOS), con el mismo nombre y
+   en el mismo orden de fábrica, y arrastrables igual que allí. Los
+   grupos vienen escritos por el puente con el nombre de la carpeta del
+   Escritorio ("3 - HERRAMIENTAS"), así que el tipo se saca de ahí. */
+const FILTROS = [
+  {id:"todos",     texto:"TODOS",         cab:"TODOS TUS ROBOTS"},
+  {id:"abiertos",  texto:"ABIERTOS",      cab:"ABIERTOS AHORA MISMO"},
+  {id:"pin",       texto:"CHINCHETA",     cab:"CON CHINCHETA (los que más usas)"},
+  {id:"recientes", texto:"RECIENTES",     cab:"RECIENTES (los últimos que has usado)"},
+  {id:"constr",    texto:"CONSTRUCTORES", cab:"AGENTES CONSTRUCTORES (hacen las apps)"},
+  {id:"puntuales", texto:"PUNTUALES",     cab:"AGENTES PUNTUALES (encargos sueltos)"},
+  {id:"sistema",   texto:"SISTEMA",       cab:"HERRAMIENTAS DEL SISTEMA (no son agentes)"},
+  {id:"otros",     texto:"LOS DEMÁS",     cab:"LOS DEMÁS ROBOTS"}
+];
+let FILTRO = "todos";
+const fijado = x => (G.pins||[]).includes(x.id);
+function chincheta(id){
+  G.pins = G.pins || [];
+  const i = G.pins.indexOf(id);
+  if(i<0) G.pins.push(id); else G.pins.splice(i,1);
+  guardarGustos();
+}
+function cabeceraFiltro(){ const f = FILTROS.find(x=>x.id===FILTRO); return f ? f.cab : "TODOS TUS ROBOTS"; }
+function tipoDe(x){
+  const g = (x.grupo||"").toUpperCase();
+  if(g.includes("CONSTRUCTOR")) return "constr";
+  if(g.includes("PUNTUAL"))     return "puntuales";
+  if(g.includes("HERRAMIENTA")) return "sistema";
+  return "otros";
+}
+function pasaFiltro(x){
+  switch(FILTRO){
+    case "abiertos":  return !!x.abierto;
+    case "pin":       return fijado(x);
+    case "recientes": return !!G.usados[x.id];
+    case "todos":     return true;
+    default:          return tipoDe(x)===FILTRO;
+  }
+}
+function filtrosOrdenados(){
+  const o = Array.isArray(G.filtros) ? G.filtros : [];
+  const puestos = o.map(id => FILTROS.find(f=>f.id===id)).filter(Boolean);
+  FILTROS.forEach(f=>{ if(!puestos.includes(f)) puestos.push(f); });
+  return puestos;
+}
+function cuentaFiltro(f){
+  const g = FILTRO; FILTRO = f.id;
+  const n = todosLosRobots().filter(pasaFiltro).length;
+  FILTRO = g; return n;
+}
+function pintarFiltrosRobots(){
+  const c = $("#rfiltros"); if(!c) return;
+  c.innerHTML="";
+  filtrosOrdenados().forEach(f=>{
+    const b = el("button","fil"+(FILTRO===f.id?" filon":""), f.texto);
+    b.dataset.fil = f.id;
+    if(f.id!=="todos"){ const n = cuentaFiltro(f); b.appendChild(el("span","n", String(n))); }
+    b.onclick = ()=>{ if(!b.dataset.movido){ FILTRO = f.id; pintarRobots(); } };
+    arrastrable(b, c, ()=>{
+      G.filtros = Array.from(c.children).map(x=>x.dataset.fil);
+      guardarGustos();
+    });
+    c.appendChild(b);
+  });
+}
+/* Arrastrar con el dedo. El arrastre de HTML5 no existe en un móvil, así
+   que va con eventos de puntero: se marca el botón, y al pasar por encima
+   de otro se cambian de sitio. El .dataset.movido evita que soltar el
+   dedo cuente además como una pulsación. */
+function arrastrable(b, caja, alSoltar){
+  let dentro = false;
+  b.addEventListener("pointerdown", e=>{
+    dentro = true; delete b.dataset.movido;
+    b.setPointerCapture(e.pointerId);
+    b.classList.add("arrastrando");
+  });
+  b.addEventListener("pointermove", e=>{
+    if(!dentro) return;
+    const o = document.elementFromPoint(e.clientX, e.clientY);
+    const otro = o && o.closest ? o.closest(".fil") : null;
+    if(!otro || otro===b || otro.parentNode!==caja) return;
+    b.dataset.movido = "1";
+    const hs = Array.from(caja.children);
+    if(hs.indexOf(b) < hs.indexOf(otro)) caja.insertBefore(otro, b);
+    else caja.insertBefore(b, otro);
+  });
+  const fin = ()=>{
+    if(!dentro) return;
+    dentro = false;
+    b.classList.remove("arrastrando");
+    if(b.dataset.movido){ alSoltar(); setTimeout(()=>{ delete b.dataset.movido; }, 0); }
+  };
+  b.addEventListener("pointerup", fin);
+  b.addEventListener("pointercancel", fin);
 }
 
 async function mandarRobot(id, que, nombre){
@@ -959,6 +1383,9 @@ async function mandarRobot(id, que, nombre){
   // puente). Antes se cortaba aquí y no se llegaba a apuntar nada, así que
   // pulsar de verdad no hacía absolutamente nada. Vacuna V-198.
   S.pedidas[id] = (que==="abrir"?"abriendo…":"cerrando…");
+  // Lo que toca pasa a ser RECIENTE, igual que en el panel del ordenador:
+  // así el filtro RECIENTES le deja arriba los cuatro de siempre.
+  G.usados[id] = Date.now(); guardarGustos();
   pintar();
   try{
     const o = await bajar(F_ORDENES);
@@ -1055,9 +1482,13 @@ function nodoSolicitud(s, padreId){
     bd.onclick = ()=>{ const x=ta.value; ta.value=""; pedirDentro(s.id, x).catch(e=>toast(e.message,true)); };
     acc.appendChild(bd);
   }
-  const bf = el("button","sec fin","✓ Quitar");
+  const bf = el("button","sec fin","✓ Ya está hecha");
   bf.onclick = ()=> cerrarHilo(hid, sid);
   acc.appendChild(bf);
+  const bb = el("button","sec","🗑 Borrar");
+  bb.style.color = "var(--bad)";
+  bb.onclick = ()=> borrarHilo(hid, sid, esc(s.titulo));
+  acc.appendChild(bb);
   b.appendChild(acc);
   d.appendChild(b);
   return d;
@@ -1113,7 +1544,10 @@ function nodoHilo(h, padreId){
   bs.onclick = ()=>{ const t=ta.value; ta.value=""; responder(hid, t, sid); };
   const bf = el("button","sec fin","✓ Terminado");
   bf.onclick = ()=> cerrarHilo(hid, sid);
-  acc.appendChild(bs); acc.appendChild(bf); b.appendChild(acc);
+  const bb = el("button","sec","🗑 Borrar");
+  bb.style.color = "var(--bad)";
+  bb.onclick = ()=> borrarHilo(hid, sid, esc(h.titulo));
+  acc.appendChild(bs); acc.appendChild(bf); acc.appendChild(bb); b.appendChild(acc);
   d.appendChild(b);
   return d;
 }
@@ -1399,7 +1833,30 @@ function pintarCfg(){
     const bt = el("button",null,"Desconectar"); bt.style.color="var(--bad)"; bt.onclick=desconectar;
     f.appendChild(bt); c.appendChild(f);
   }
+  pintarOrdenPestanas();
   pintarSalud();
+}
+function pintarOrdenPestanas(){
+  const c = $("#ordenPest"); if(!c) return;
+  c.innerHTML="";
+  const ls = vistasOrdenadas();
+  ls.forEach((v,i)=>{
+    const f = el("div","mv");
+    f.appendChild(el("b", null, v.nombre));
+    const sube = el("button", null, "▲"); sube.title = "Subirla";
+    const baja = el("button", null, "▼"); baja.title = "Bajarla";
+    sube.disabled = (i===0); baja.disabled = (i===ls.length-1);
+    const mover = d=>{
+      const ids = ls.map(x=>x.id);
+      const t = ids[i]; ids[i] = ids[i+d]; ids[i+d] = t;
+      G.pestanas = ids; guardarGustos();
+      pintarNav(); pintarOrdenPestanas();
+    };
+    sube.onclick = ()=> mover(-1);
+    baja.onclick = ()=> mover(1);
+    f.appendChild(sube); f.appendChild(baja);
+    c.appendChild(f);
+  });
 }
 
 /* ── SI ALGO VA MAL ───────────────────────────────────────────────
@@ -1542,8 +1999,16 @@ $("#txtsol").addEventListener("keydown", e=>{ if(e.key==="Enter" && (e.ctrlKey||
 $("#brec").onclick  = ()=> cargar().then(()=>toast("Al día ✓")).catch(e=>toast(e.message,true));
 $("#bconn").onclick = ()=> conectar().catch(e=>toast(e.message,true));
 $("#bdemo").onclick = ()=>{ ejemplo(); ver("inicio"); };
-$("#bnuevo").onclick = ()=>{ ver("solicitudes"); $("#txtsol").focus(); };
 $("#txt").addEventListener("keydown", e=>{ if(e.key==="Enter" && (e.ctrlKey||e.metaKey)) enviar(); });
+
+$("#pestdef").onclick = ()=>{
+  G.pestanas = null; G.filtros = null; guardarGustos();
+  pintarNav(); pintarOrdenPestanas(); pintarRobots(); toast("Como estaban ✓");
+};
+// ROBOTS: el buscador, el botón de volver a mirar y el orden de las pestañas.
+$("#rbusca").addEventListener("input", ()=> pintarRobots());
+$("#rvolver").onclick = ()=> cargar().then(()=>toast("Al día ✓")).catch(e=>toast(e.message,true));
+$("#pref").onclick    = ()=> cargar().then(()=>toast("Al día ✓")).catch(e=>toast(e.message,true));
 
 // La direccion que hay que dar de alta en Dropbox sale del MISMO sitio que usa
 // conectar(): asi no puede desviarse de lo que se envia de verdad. Vacuna V-081.
