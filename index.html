@@ -515,7 +515,15 @@ function estadoVacio(){ return {v:1, actualizado:null, agentes:[], espera_de_ti:
 async function cargar(){
   if(S.demo){ pintar(); return; }
   const t0 = (window.performance ? performance.now() : Date.now());
-  const [e,b,rb] = await Promise.all([bajar(F_ESTADO), bajar(F_BUZON), bajar(F_ROBOTS)]);
+  // allSettled y NO all: con Promise.all, UN archivo roto tumbaba la página
+  // ENTERA. El 10/08 robots.json llegó vacío y el dueño se quedó sin tablero,
+  // sin Hablar y sin Solicitudes -que no dependen de él para nada- viendo solo
+  // "corrupto". Cada archivo falla ahora en su sección y el resto se pinta.
+  const [pe,pb,prb] = await Promise.allSettled([bajar(F_ESTADO), bajar(F_BUZON), bajar(F_ROBOTS)]);
+  const vale = p => p.status==="fulfilled" ? p.value : {datos:null, rev:null};
+  const e = vale(pe), b = vale(pb), rb = vale(prb);
+  S.rotos = [[pe,"el tablero"],[pb,"los mensajes"],[prb,"los robots"]]
+              .filter(([p])=>p.status==="rejected").map(([,n])=>n);
   S.ms = Math.round((window.performance ? performance.now() : Date.now()) - t0);
   S.estado = e.datos || estadoVacio(); S.revEstado = e.rev;
   S.buzon  = b.datos || buzonVacio();  S.revBuzon  = b.rev;
@@ -679,7 +687,7 @@ function pintar(){
   $("#marca").textContent = S.demo ? "ejemplo" : (S.tok||S.ref ? "en vivo" : "sin conectar");
   $("#sub").textContent = S.demo ? "datos de ejemplo"
       : (act ? (paradoMin > 5
-                  ? "PARADO "+cuando(act)+" · abre el puente en el ordenador"
+                  ? "PARADO "+cuando(act)+" · abre ABRIR Y CERRAR ROBOTS en el ordenador"
                   : "la fábrica, "+cuando(act)+(S.ms?" · "+S.ms+" ms":""))
              : "esperando a los agentes");
 }
@@ -890,7 +898,7 @@ function pintarRobots(){
 async function mandarRobot(id, que, nombre){
   if(S.demo){ toast("Esto es el ejemplo: conecta para mandar de verdad"); return; }
   if(!puenteVivo()){
-    toast("El ordenador no está escuchando: abre «El móvil manda en los robots»", true);
+    toast("El ordenador no está escuchando: abre ABRIR Y CERRAR ROBOTS en el ordenador", true);
     pintar(); return;
   }
   S.pedidas[id] = (que==="abrir"?"abriendo…":"cerrando…");
