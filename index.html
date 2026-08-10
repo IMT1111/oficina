@@ -235,6 +235,24 @@ textarea{resize:vertical;min-height:92px}
     </div>
   </section>
 
+  <!-- ═══ MANUAL ═══
+       La pestaña Manual del panel del ordenador (PANEL2.html), que en el
+       móvil no estaba: los papeles del proyecto y un buscador que mira
+       dentro de todos a la vez. Los papeles NO viajan en estado.json (son
+       2,2 MB): se bajan de uno en uno y solo si los abre. -->
+  <section class="vista" id="v-manual">
+    <div class="card">
+      <h2>📚 LOS PAPELES DE LA FÁBRICA</h2>
+      <p class="vacio" style="margin:0 0 11px">Todo lo que está escrito del proyecto y de cada módulo. Escribe una palabra y te digo en qué papel está.</p>
+      <div class="row">
+        <input id="mbusca" placeholder="Buscar: alarmas, hebreo, precio…">
+        <button class="sec estrecho" id="mbtn">Buscar</button>
+      </div>
+      <div class="sub" id="mmigas" style="margin-top:11px"></div>
+    </div>
+    <div id="mview"></div>
+  </section>
+
   <!-- ═══ SOLICITUDES ═══ -->
   <section class="vista" id="v-solicitudes">
     <div class="card">
@@ -639,6 +657,7 @@ const VISTAS = [
   {id:"robots",    nombre:"Robots",    cuenta:()=> nRobots()},
   {id:"proyectos", nombre:"Proyectos", cuenta:()=> nAgentes()},
   {id:"hecho",     nombre:"Lo hecho"},
+  {id:"manual",    nombre:"Manual"},
   {id:"solicitudes", nombre:"Solicitudes", cuenta:()=> nSolicitudes()},
   {id:"hablar",    nombre:"Hablar",    cuenta:()=> nHilos()},
   {id:"ajustes",   nombre:"Ajustes"}
@@ -663,6 +682,9 @@ function ver(id){
   VISTAS.forEach(v=> $("#v-"+v.id).classList.toggle("on", v.id===id));
   $("#titulo").textContent = (VISTAS.find(v=>v.id===id)||{}).nombre || "Inicio";
   pintarNav();
+  // El manual se baja la primera vez que lo abre, no al arrancar: son 62 KB
+  // de índice que no hacen falta para ver cómo va la fábrica.
+  if(id==="manual") arrancarManual();
   scrollTo({top:0});
 }
 
@@ -1060,6 +1082,250 @@ function nodoHilo(h, padreId){
   d.appendChild(b);
   return d;
 }
+
+/* ═══ 6b · EL MANUAL ══════════════════════════════════════════
+   Los papeles del proyecto (OBJETIVO, PLAN, LOG, las especificaciones
+   de cada módulo…) para leerlos y buscarlos desde el móvil. Es lo que
+   hacía la pestaña Manual del panel del ordenador, PANEL2.html.
+
+   POR QUÉ NO SE BAJA TODO DE GOLPE: los papeles suman 2,2 MB (medido
+   el 10/08; solo las especificaciones de `aprender` son 195 KB). Eso
+   por datos móviles, cada vez que abre la página, sería una barbaridad
+   y no hace falta para nada. Así que:
+     · al abrir la pestaña se baja SOLO el índice (62 KB), que ya trae
+       los TÍTULOS de dentro de cada papel: con eso el buscador ya sabe
+       decirle en qué papel está lo que busca, sin bajar ni uno;
+     · un papel entero se baja cuando lo abre, y se queda guardado;
+     · buscar DENTRO del texto de todos es un botón aparte que avisa
+       de lo que va a bajar.
+   Cada papel lleva su sello (cuándo se tocó y cuánto ocupa): si no ha
+   cambiado, no se vuelve a bajar nunca. */
+const F_MANUAL = "/manual.json";
+const MAN_LS   = "oficina.man.";        // una clave por papel
+const MAN = { indice:null, textos:{}, cargando:false, todos:false, q:"" };
+
+const escH = s => String(s==null?"":s)
+  .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+// Buscar sin que las tildes estorben, SIN mover una sola posición: los
+// recortes que se enseñan se cortan del texto de verdad, con sus tildes.
+const ACENTOS = {"á":"a","é":"e","í":"i","ó":"o","ú":"u","ü":"u","ñ":"n","ç":"c"};
+const plano = s => String(s||"").toLowerCase().replace(/[áéíóúüñç]/g, c=>ACENTOS[c]);
+const escRx = s => String(s||"").replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+const kb = n => n >= 1048576 ? (n/1048576).toFixed(1)+" MB" : Math.max(1,Math.round(n/1024))+" KB";
+
+function migasM(html){ $("#mmigas").innerHTML = html; }
+function mview(html){ $("#mview").innerHTML = html; }
+
+async function arrancarManual(){
+  if(MAN.indice || MAN.cargando) return;
+  if(S.demo){
+    mview('<div class="card"><p class="vacio">Aquí salen los papeles del proyecto: qué se construye, el plan, lo ya hecho y lo que hace cada módulo. Conéctate con Dropbox en Ajustes para leerlos.</p></div>');
+    return;
+  }
+  if(!(S.tok || S.ref)){
+    mview('<div class="card"><p class="vacio">Conéctate con Dropbox en Ajustes y aquí tendrás todos los papeles.</p></div>');
+    return;
+  }
+  MAN.cargando = true;
+  mview('<div class="card"><p class="vacio">Buscando los papeles…</p></div>');
+  try{
+    const r = await bajar(F_MANUAL);
+    MAN.indice = r.datos;
+  }catch(e){
+    mview('<div class="card"><p class="vacio">No he podido traer los papeles: '+escH(e.message)+'</p></div>');
+    MAN.cargando = false; return;
+  }
+  MAN.cargando = false;
+  if(!MAN.indice || !(MAN.indice.papeles||[]).length){
+    mview('<div class="card"><p class="vacio">Todavía no hay papeles aquí. Los deja el ordenador cuando está encendido: abre <b>ABRIR Y CERRAR ROBOTS</b>.</p></div>');
+    return;
+  }
+  verIndiceManual();
+}
+
+/* ── el índice: por el proyecto y por cada módulo ─────────────── */
+function verIndiceManual(){
+  const ps = MAN.indice.papeles;
+  const grupos = [];
+  ps.forEach(p=>{
+    let g = grupos.find(x=>x.id===p.grupo);
+    if(!g){ g = {id:p.grupo, de:p.de, papeles:[]}; grupos.push(g); }
+    g.papeles.push(p);
+  });
+  let html = "";
+  grupos.forEach(g=>{
+    html += '<div class="card"><h2>'+escH(g.id==="el-proyecto" ? "📱 "+g.de : "🧩 "+g.de)+'</h2>';
+    g.papeles.forEach(p=>{
+      html += '<div class="mini" data-papel="'+escH(p.id)+'" style="cursor:pointer">'
+            + '<div class="nm">'+escH(p.desc)+'</div>'
+            + '<div class="m"><span>'+escH(p.nombre)+'</span><span>'+kb(p.bytes)+'</span></div></div>';
+    });
+    html += '</div>';
+  });
+  mview(html);
+  migasM("Todos los papeles · "+ps.length+" en total");
+}
+
+/* ── traer un papel (y no volver a traerlo nunca si no ha cambiado) ── */
+function guardado(id, sello){
+  try{
+    const j = JSON.parse(localStorage.getItem(MAN_LS+id)||"null");
+    return (j && j.sello===sello) ? j.texto : null;
+  }catch(e){ return null; }
+}
+function guardar(id, sello, texto){
+  try{ localStorage.setItem(MAN_LS+id, JSON.stringify({sello, texto})); }
+  catch(e){
+    // Sin sitio: se tira lo guardado y se sigue. Un papel que no se puede
+    // guardar se lee igual, solo que la próxima vez se vuelve a bajar.
+    try{
+      Object.keys(localStorage).filter(k=>k.indexOf(MAN_LS)===0).forEach(k=>localStorage.removeItem(k));
+      localStorage.setItem(MAN_LS+id, JSON.stringify({sello, texto}));
+    }catch(e2){}
+  }
+}
+async function traerPapel(p){
+  if(MAN.textos[p.id] != null) return MAN.textos[p.id];
+  const ls = guardado(p.id, p.sello);
+  if(ls != null){ MAN.textos[p.id] = ls; return ls; }
+  const r = await bajar("/manual/"+p.id+".json");
+  const t = (r.datos && r.datos.texto) || "";
+  MAN.textos[p.id] = t;
+  guardar(p.id, p.sello, t);
+  return t;
+}
+const papelPorId = id => (MAN.indice.papeles||[]).find(p=>p.id===id);
+
+async function abrirPapel(id){
+  const p = papelPorId(id);
+  if(!p) return;
+  mview('<div class="card"><p class="vacio">Abriendo '+escH(p.nombre)+'…</p></div>');
+  migasM('<a href="#" data-volver="1">Todos los papeles</a> › <b>'+escH(p.nombre)+'</b>');
+  let t;
+  try{ t = await traerPapel(p); }
+  catch(e){ mview('<div class="card"><p class="vacio">No he podido abrirlo: '+escH(e.message)+'</p></div>'); return; }
+  mview('<div class="card"><h2>'+escH(p.desc)+'</h2>'
+      + '<p class="sub" style="margin:0 0 4px">'+escH(p.de)+' · '+escH(p.nombre)+'</p></div>'
+      + renderMD(t));
+  scrollTo({top:0});
+}
+
+/* Markdown a la pantalla: títulos, negrita, listas, citas y bloques de
+   código. Lo mismo que hacía el panel del ordenador. */
+function renderMD(t){
+  if(!t || !t.trim()) return '<div class="card"><p class="vacio">Este papel está vacío.</p></div>';
+  let x = escH(t);
+  const bloques = [];
+  x = x.replace(/```[\s\S]*?```/g, m=>{ bloques.push(m.replace(/```/g,"")); return "@@COD"+(bloques.length-1)+"@@"; });
+  x = x.replace(/^### (.*)$/gm,'<h3 style="color:var(--acc);margin:18px 0 6px">$1</h3>');
+  x = x.replace(/^## (.*)$/gm,'<h3 style="color:var(--acc);border-bottom:1px solid var(--line);padding-bottom:5px;margin:24px 0 8px">$1</h3>');
+  x = x.replace(/^# (.*)$/gm,'<h2 style="margin:6px 0 10px">$1</h2>');
+  x = x.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>');
+  x = x.replace(/`([^`]+)`/g,'<code style="background:#0a1120;padding:1px 6px;border-radius:4px;color:var(--acc)">$1</code>');
+  x = x.replace(/^&gt; (.*)$/gm,'<blockquote style="border-left:3px solid var(--acc);padding-left:12px;color:var(--muted);margin:10px 0">$1</blockquote>');
+  x = x.replace(/^(?:[-*]|\d+\.)\s+(.*)$/gm,'<li style="margin:4px 0">$1</li>');
+  x = x.replace(/(?:<li[^>]*>[\s\S]*?<\/li>\n?)+/g, m=>'<ul style="margin:8px 0 14px;padding-left:20px">'+m+'</ul>');
+  bloques.forEach((b,i)=>{ x = x.replace("@@COD"+i+"@@",
+    '<pre style="background:#0a1120;padding:12px;border-radius:6px;overflow-x:auto;font-size:13px;color:#c6d0ec">'+b+'</pre>'); });
+  return '<div class="card" style="line-height:1.7;font-size:15px;word-wrap:break-word">'+x+'</div>';
+}
+
+/* ── buscar ───────────────────────────────────────────────────── */
+function recorte(texto, i, largo){
+  const desde = Math.max(0, i-80), hasta = Math.min(texto.length, i+largo+80);
+  return (desde?"…":"") + escH(texto.slice(desde, i))
+       + '<mark style="background:var(--acc);color:#08101f">'+escH(texto.slice(i,i+largo))+'</mark>'
+       + escH(texto.slice(i+largo, hasta)) + (hasta<texto.length?"…":"");
+}
+function buscarManual(){
+  if(!MAN.indice) return;
+  const q = $("#mbusca").value.trim();
+  if(!q){ verIndiceManual(); return; }
+  MAN.q = q;
+  const ql = plano(q);
+  const enTitulos = [], enTexto = [];
+  (MAN.indice.papeles||[]).forEach(p=>{
+    const t = MAN.textos[p.id] != null ? MAN.textos[p.id] : guardado(p.id, p.sello);
+    if(t != null){
+      MAN.textos[p.id] = t;
+      const i = plano(t).indexOf(ql);
+      if(i > -1){ enTexto.push({p, html: recorte(t, i, q.length)}); return; }
+    }
+    const tit = (p.titulos||[]).filter(x=>plano(x).indexOf(ql)>-1);
+    if(tit.length || plano(p.desc+" "+p.nombre+" "+p.de).indexOf(ql)>-1)
+      enTitulos.push({p, tit});
+  });
+
+  let html = "";
+  if(!enTitulos.length && !enTexto.length){
+    html = '<div class="card"><p class="vacio">No he encontrado <b>'+escH(q)+'</b> en los títulos de ningún papel.</p></div>';
+  }
+  if(enTexto.length){
+    html += '<div class="card"><h2>Lo dice aquí dentro</h2>';
+    enTexto.forEach(r=>{
+      html += '<div class="mini" data-papel="'+escH(r.p.id)+'" style="cursor:pointer">'
+            + '<div class="nm">'+escH(r.p.desc)+'</div>'
+            + '<div class="est" style="margin-top:6px">'+r.html+'</div>'
+            + '<div class="m"><span>'+escH(r.p.de)+'</span><span>'+escH(r.p.nombre)+'</span></div></div>';
+    });
+    html += '</div>';
+  }
+  if(enTitulos.length){
+    html += '<div class="card"><h2>Papeles que hablan de eso</h2>';
+    enTitulos.forEach(r=>{
+      html += '<div class="mini" data-papel="'+escH(r.p.id)+'" style="cursor:pointer">'
+            + '<div class="nm">'+escH(r.p.desc)+'</div>'
+            + (r.tit.length ? '<div class="est" style="margin-top:6px">'+escH(r.tit.slice(0,4).join(" · "))+'</div>' : "")
+            + '<div class="m"><span>'+escH(r.p.de)+'</span><span>'+escH(r.p.nombre)+'</span></div></div>';
+    });
+    html += '</div>';
+  }
+  // Lo que NO se ha mirado, dicho con todas las letras: si no lo pone, se
+  // cree que "no hay resultados" significa que eso no está escrito.
+  if(!MAN.todos){
+    const faltan = (MAN.indice.papeles||[]).filter(p=>MAN.textos[p.id]==null);
+    const peso = faltan.reduce((s,p)=>s+p.bytes,0);
+    html += '<div class="card"><p class="vacio" style="margin:0 0 10px">He mirado los títulos de los '
+          + (MAN.indice.papeles||[]).length+' papeles y dentro de los '
+          + ((MAN.indice.papeles||[]).length-faltan.length)+' que ya has abierto. Puedo mirar dentro de todos, pero hay que traerlos: '
+          + kb(peso)+'.</p><div class="row"><button class="sec" data-todos="1">Mirar dentro de todos</button></div></div>';
+  }
+  mview(html);
+  migasM('<a href="#" data-volver="1">Todos los papeles</a> › buscando <b>'+escH(q)+'</b>');
+}
+
+/* Traerlos todos: de seis en seis, para no tener al móvil esperando a que
+   acaben 73 llamadas de una en una. */
+async function traerTodos(){
+  const faltan = (MAN.indice.papeles||[]).filter(p=>MAN.textos[p.id]==null);
+  let hechos = 0, fallos = 0;
+  const aviso = ()=> migasM("Trayendo los papeles… "+hechos+" de "+faltan.length);
+  aviso();
+  const cola = faltan.slice();
+  await Promise.all(Array.from({length:6}, async ()=>{
+    while(cola.length){
+      const p = cola.shift();
+      try{ await traerPapel(p); }catch(e){ fallos++; MAN.textos[p.id] = ""; }
+      hechos++; if(hechos % 5 === 0) aviso();
+    }
+  }));
+  MAN.todos = true;
+  if(fallos) toast(fallos+" papeles no han llegado", true);
+  buscarManual();
+}
+
+$("#mbtn").onclick = ()=> buscarManual();
+$("#mbusca").addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); buscarManual(); } });
+$("#mmigas").addEventListener("click", e=>{
+  const a = e.target.closest("[data-volver]");
+  if(a){ e.preventDefault(); $("#mbusca").value=""; verIndiceManual(); }
+});
+$("#mview").addEventListener("click", e=>{
+  const t = e.target.closest("[data-todos]");
+  if(t){ traerTodos(); return; }
+  const d = e.target.closest("[data-papel]");
+  if(d) abrirPapel(d.getAttribute("data-papel"));
+});
 
 /* ═══ 7 · MICRÓFONO ═══════════════════════════════════════════ */
 let rec=null;
