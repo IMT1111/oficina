@@ -339,12 +339,24 @@ const F_ROBOTS  = "/robots.json";
 const F_ORDENES = "/ordenes.json";
 const LS = "oficina.v1";
 
-/* El puente escribe robots.json cada 3 s. Si lo último que escribió tiene más
-   de esto, NO está escuchando y sus botones no harían nada. Antes la página
-   solo miraba si el archivo EXISTÍA: el 09/08 pulsó dos robots con el puente
-   caído, las órdenes se quedaron en la cola una hora y la página no dijo ni
-   una palabra. Eso es lo que él vio como "no funciona en absoluto". */
-const PUENTE_FRESCO_MS = 20000;
+/* CUÁNTO PUEDE TARDAR EL ORDENADOR EN DAR SEÑALES ANTES DE DARLO POR MUERTO.
+
+   ESTE NÚMERO TIENE QUE SER VARIAS VECES MAYOR QUE `LATIDO_MS` DE
+   `puente_oficina.js`. No es un ajuste fino: es la avería del 10/08, la que
+   él llamó "terrible" y "no funciona en absoluto".
+
+   Qué pasó: el puente dejó de reescribir robots.json cada 3 s (eran 1.200
+   escrituras por hora que Dropbox no llegaba a subir) y pasó a escribirlo
+   solo cuando algo cambia, con un latido cada 30 s. Nadie tocó esta línea,
+   que seguía en 20 s. 20 es MENOR que 30: entre latido y latido la página
+   daba SIEMPRE el ordenador por muerto, aunque estuviera perfectamente vivo
+   —medido ese día: el puente escribiendo a las 19:23:36 con el reloj en las
+   19:23:47, y el móvil diciendo "NO ESTÁ ESCUCHANDO"—. Y como además los
+   botones se apagaban solos, la pestaña Robots entera quedaba muerta.
+
+   Van 150 s: cinco latidos. Así caben un latido perdido y lo que Dropbox
+   tarde en llevarlo al móvil sin que nada se apague. Vacuna V-198. */
+const PUENTE_FRESCO_MS = 150000;
 
 let S = {
   tok:null, ref:null, exp:0,
@@ -891,12 +903,17 @@ function pintarRobots(){
   p.appendChild(est);
 
   if(!vivo){
+    // NUNCA se apagan los botones y NUNCA se le manda a abrir nada.
+    // Los dos son órdenes suyas del 10/08. Lo de "abre El móvil manda SIEMPRE
+    // y pulsa 1" ("eso es una porquería") ya no hacía ninguna falta: el enlace
+    // lo arranca solo ABRIR Y CERRAR ROBOTS y, si se cayera, una tarea de
+    // Windows lo levanta otra vez en menos de 5 minutos. Y apagar los botones
+    // era peor que inútil: lo que pulsa se GUARDA en la cola y el ordenador lo
+    // hace en cuanto vuelve, así que apagarlos le quitaba lo único que sí
+    // funcionaba.
     p.appendChild(el("div","vacio",
-      "El ordenador no está escuchando, así que los botones de abajo no harían nada. "+
-      "En el ordenador, Escritorio › ROBOTS › 3 - HERRAMIENTAS, abre «El móvil manda SIEMPRE» "+
-      "y pulsa 1: con eso queda puesto para siempre y ya no tienes que acordarte de nada."));
-    if(!r){ return; }
-    p.appendChild(el("div","vacio","Debajo está tu panel tal y como estaba la última vez, pero no se puede mandar."));
+      "Tu ordenador lleva un rato sin dar señales. Puedes pulsar igual: lo que "+
+      "pidas queda apuntado y se hace en cuanto vuelva a estar encendido."));
   }
 
   // lo último que contestó el ordenador
@@ -927,7 +944,6 @@ function pintarRobots(){
       if(pedida) d.appendChild(el("div","est", pedida));
       const fila = el("div","row");
       const bt = el("button", "sec"+(x.abierto?" fin":""), x.abierto ? "Cerrar" : "Abrir");
-      if(!vivo){ bt.disabled = true; }
       bt.onclick = ()=>{ bt.disabled=true; mandarRobot(x.id, x.abierto?"cerrar":"abrir", x.nombre); };
       fila.appendChild(bt); d.appendChild(fila);
       card.appendChild(d);
@@ -938,10 +954,10 @@ function pintarRobots(){
 
 async function mandarRobot(id, que, nombre){
   if(S.demo){ toast("Esto es el ejemplo: conecta para mandar de verdad"); return; }
-  if(!puenteVivo()){
-    toast("El ordenador no está escuchando: abre ABRIR Y CERRAR ROBOTS en el ordenador", true);
-    pintar(); return;
-  }
+  // La orden se manda SIEMPRE, esté el ordenador dando señales o no: se queda
+  // apuntada y él la hace en cuanto vuelve (aguanta 10 min, CADUCA_MS del
+  // puente). Antes se cortaba aquí y no se llegaba a apuntar nada, así que
+  // pulsar de verdad no hacía absolutamente nada. Vacuna V-198.
   S.pedidas[id] = (que==="abrir"?"abriendo…":"cerrando…");
   pintar();
   try{
