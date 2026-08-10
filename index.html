@@ -270,6 +270,15 @@ textarea{resize:vertical;min-height:92px}
       <div class="row"><button class="acc" id="bconn">Conectar con Dropbox</button></div>
       <div class="row"><button class="sec" id="bdemo">Ver ejemplo (sin conectar)</button></div>
     </div>
+    <!-- ═══ SI ALGO VA MAL ═══
+         La pestaña Diagnóstico del panel del ordenador (PANEL2.html), que
+         en el móvil no estaba: aquí se veía lo que se está HACIENDO, pero
+         no si se está GUARDANDO. Estas tres se rompen sin decir nada. -->
+    <div class="card">
+      <h2>🚑 SI ALGO VA MAL</h2>
+      <p class="vacio" style="margin:0 0 12px">Las cosas que se rompen calladas. Si aquí no hay nada en rojo, tu trabajo está a salvo.</p>
+      <div id="salud"></div>
+    </div>
     <div class="card">
       <h2>❓ SI DROPBOX TE DA UN ERROR</h2>
       <p style="margin:0 0 8px;font-size:14.5px"><b>«No scope requested can be granted»:</b> tu app puede ver
@@ -1081,6 +1090,64 @@ function pintarCfg(){
     const bt = el("button",null,"Desconectar"); bt.style.color="var(--bad)"; bt.onclick=desconectar;
     f.appendChild(bt); c.appendChild(f);
   }
+  pintarSalud();
+}
+
+/* ── SI ALGO VA MAL ───────────────────────────────────────────────
+   Tres cosas, y ninguna se nota rota hasta el día que hace falta: que
+   la copia de seguridad siga haciéndose, que Dropbox siga llevando lo
+   que cambias al otro ordenador, y que cada proyecto guarde algo. Se
+   escriben para que se entiendan sin saber qué es un commit. */
+function pintarSalud(){
+  const c = $("#salud"); if(!c) return;
+  c.innerHTML="";
+  const s = (S.estado && S.estado.salud) || null;
+  if(!s){ c.appendChild(el("div","vacio","Todavía no se ha mirado nada.")); return; }
+
+  let malas = 0;
+  // mal=true pinta el aviso en rojo; el resto queda en gris como lo normal
+  const linea = (titulo, texto, pie, mal)=>{
+    if(mal) malas++;
+    const d = el("div","mini");
+    const n = el("div","nm", titulo);
+    if(mal) n.style.color = "var(--bad)";
+    d.appendChild(n);
+    d.appendChild(el("div","est", texto));
+    if(pie){ const m = el("div","m"); m.appendChild(el("span",null,pie)); d.appendChild(m); }
+    c.appendChild(d);
+  };
+
+  const cop = s.copia;
+  linea("Copia de seguridad",
+    s.copia_vieja
+      ? "No se está guardando. Debería hacerse sola cada media hora y no lo está haciendo."
+      : "Se guarda sola cada media hora. Todo lo de esta casa está dentro.",
+    cop ? "la última, " + cuando(cop.ts) : "no hay ninguna",
+    s.copia_vieja);
+
+  const sinc = (s.sincronizacion||{});
+  linea("Dropbox",
+    sinc.parada
+      ? "Se ha parado. No se ha perdido nada: todo sigue en el ordenador, pero lo que cambies ahora no le llega al móvil. Pídele a un agente que mire por qué."
+      : "Llevando y trayendo todo bien.",
+    sinc.parada && sinc.visto ? "lo último que intentó, " + cuando(sinc.visto) : "",
+    sinc.parada);
+
+  (s.repos||[]).forEach(r=>{
+    // tres días sin guardar nada en un proyecto ya es raro: o está parado
+    // de verdad, o alguien lleva días trabajando sin guardar
+    const mal = r.horas == null || r.horas > 72;
+    linea(esc(r.nombre),
+      r.horas == null ? "No se puede mirar: ahí no hay nada guardado."
+      : mal            ? "Lleva días sin guardar nada nuevo."
+                       : "Guardando su trabajo con normalidad.",
+      r.ts ? "lo último, " + cuando(r.ts) : "",
+      mal);
+  });
+
+  const t = el("div","vacio", malas ? "Hay "+malas+(malas===1?" cosa":" cosas")+" que mirar." : "Todo va bien.");
+  t.style.color = malas ? "var(--bad)" : "var(--ok)";
+  c.appendChild(t);
 }
 
 /* ═══ 9 · EJEMPLO ═════════════════════════════════════════════ */
@@ -1102,7 +1169,14 @@ function ejemplo(){
     ritmo:[{dia:"2026-07-28",n:172},{dia:"2026-07-29",n:288},{dia:"2026-07-30",n:326},{dia:"2026-07-31",n:316},
            {dia:"2026-08-01",n:98},{dia:"2026-08-02",n:319},{dia:"2026-08-03",n:529},{dia:"2026-08-04",n:499},
            {dia:"2026-08-05",n:349},{dia:"2026-08-06",n:314},{dia:"2026-08-07",n:449},{dia:"2026-08-08",n:264},
-           {dia:"2026-08-09",n:493},{dia:"2026-08-10",n:148}]}};
+           {dia:"2026-08-09",n:493},{dia:"2026-08-10",n:148}]},
+  // el ejemplo enseña una averia de verdad (Dropbox parado): una foto con
+  // todo verde no deja ver como avisa cuando algo se rompe
+  salud:{
+    repos:[{nombre:"el sistema", ts:new Date(Date.now()-18*60000).toISOString(), horas:0.3},
+           {nombre:"Portal", ts:new Date(Date.now()-5*86400000).toISOString(), horas:120}],
+    copia:{ts:new Date(Date.now()-12*60000).toISOString(), horas:0.2}, copia_vieja:false,
+    sincronizacion:{parada:true, visto:new Date(Date.now()-43*60000).toISOString()}}};
   S.robots = {v:1, actualizado: ahora(), puente:"abierto", grupos:[
     {grupo:"1 - LANZAR AGENTES · CONSTRUCTORES", robots:[
       {id:"r4", nombre:"Construir ALARMAS (alarmas y cronometro)", abierto:false, desde:null},
