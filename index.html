@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0d1424">
+<meta name="theme-color" content="#f4f1ea">
+<meta name="color-scheme" content="light only">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -11,203 +12,283 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23e08a3e'/%3E%3Cpath d='M12 40c8-2 14-8 18-16 2 8 8 14 16 16-8 4-16 6-22 6-5 0-9-2-12-6z' fill='%230d1424'/%3E%3C/svg%3E">
 <style>
 /* ═══════════════════════════════════════════════════════════════
-   MISMO ASPECTO QUE EL PANEL DEL ORDENADOR (Dropbox\APK\PANEL2.html).
-   Orden suya del 09/08 22:39: "el panel tendria que ser lo mas
-   similar posible al programa ese del ordenador... si ya esta hecho
-   y esta bastante bien, por que no lo copias".
-   Los colores, la barra de secciones, las tarjetas y los titulos
-   naranjas estan copiados de ahi. Lo unico distinto es lo que el
-   movil exige: se toca con el dedo y la barra va arriba.
+   UN PERIODICO, NO UN TABLERO DE CONTROL.
+   Orden suya del 11/08 06:44, literal: "la presentacion de la pagina
+   esta horriblemente mal, no se puede leer bien las letras, esta muy
+   oscuro... tiene que seguir la filosofia del periodismo, que de un
+   vistazo yo pueda entender todo y pueda captar toda la informacion
+   relevante". Y antes, muchas veces: "el 99% de las veces yo lo voy a
+   utilizar desde el telefono movil".
+
+   De donde sale cada decision, para que nadie la deshaga sin saberlo:
+   - PAPEL, NO PANTALLA NEGRA. El azul marino de antes daba 8:1 en los
+     titulos pero 4,4:1 en el texto gris, y a plena luz en la calle eso
+     no se lee. Tinta #16181d sobre papel #fff son 16:1, y el gris de
+     los pies 6,2:1. Se fuerza claro (color-scheme) para que el modo
+     oscuro del movil no lo invierta y devuelva el problema.
+   - JERARQUIA DE PORTADA. Titular grande con serif, entradilla, y el
+     detalle escondido detras de "ampliar". De un vistazo, los titulares.
+   - DEDO, NO RATON. Nada pulsable por debajo de 44 px de alto, texto
+     base 17 px, y ninguna caja que se salga a lo ancho.
    ═══════════════════════════════════════════════════════════════ */
 :root{
-  --bg:#0d1424; --panel:#152040; --panel2:#0f1830; --line:#243154;
-  --txt:#e7ecf7; --muted:#8a99c2; --acc:#e08a3e; --acc2:#f0a355;
-  --ok:#6fd99a; --bad:#e08a8a; --warn:#e0b84f;
+  --bg:#f4f1ea;        /* el papel */
+  --panel:#ffffff;     /* la columna impresa */
+  --panel2:#faf8f3;    /* el recuadro de dentro */
+  --line:#d9d3c5;      /* el filete fino */
+  --tinta:#16181d;     /* el filete grueso de cabecera */
+  --txt:#16181d; --muted:#5b6170;
+  --acc:#a8261e; --acc2:#7d1c16;   /* el rojo del periodico */
+  --ok:#1c6b3f; --bad:#b3261e; --warn:#8a5a00;
+  --serif:Georgia,'Times New Roman',Times,serif;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
 body{background:var(--bg);color:var(--txt);
-  font:16px/1.45 'Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;
-  padding-bottom:env(safe-area-inset-bottom);overscroll-behavior-y:contain}
+  font:17px/1.5 'Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;
+  padding-bottom:env(safe-area-inset-bottom);overscroll-behavior-y:contain;
+  -webkit-text-size-adjust:100%}
 button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;border-radius:7px}
 textarea,input{font:inherit;color:inherit}
 
-/* ---------- la barra de secciones (el sidebar del panel) ---------- */
-#side{position:sticky;top:0;z-index:30;background:#0a1120;border-bottom:1px solid var(--line);
+/* ---------- la cabecera del periodico ---------- */
+#side{position:sticky;top:0;z-index:30;background:var(--panel);
+  border-bottom:2px solid var(--tinta);
   padding:calc(6px + env(safe-area-inset-top)) 0 0}
-#side .brand{display:flex;align-items:center;gap:9px;padding:4px 14px 8px}
-#side .brand b{font-size:16px;letter-spacing:.3px}
-#side .brand span{color:var(--muted);font-size:11.5px}
+#side .brand{display:flex;align-items:center;gap:9px;padding:5px 14px 7px}
+#side .brand b{font:700 20px/1 var(--serif);letter-spacing:.5px}
+#side .brand span{color:var(--muted);font-size:12px}
 #side .brand .sp{flex:1}
-#navs{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+#navs{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
+  border-top:1px solid var(--line)}
 #navs::-webkit-scrollbar{display:none}
-.nav{background:none;color:var(--muted);padding:11px 14px;font-size:14px;white-space:nowrap;
+.nav{background:none;color:var(--muted);padding:13px 14px;font-size:14px;font-weight:600;
+  letter-spacing:.4px;text-transform:uppercase;white-space:nowrap;min-height:46px;
   border-bottom:3px solid transparent;border-radius:0;flex:0 0 auto;transition:.15s}
-.nav .n{background:#1c2947;color:#c6d0ec;border-radius:11px;padding:0 6px;font-size:11px;margin-left:5px}
-.navon{color:#fff;border-bottom-color:var(--acc);background:#131d38}
-.iconbtn{width:36px;height:36px;border-radius:9px;background:var(--panel);display:grid;place-items:center;font-size:16px}
+.nav .n{background:var(--acc);color:#fff;border-radius:11px;padding:1px 7px;font-size:12px;
+  margin-left:6px;font-weight:700}
+.navon{color:var(--tinta);border-bottom-color:var(--acc);background:#fff}
+.iconbtn{width:44px;height:44px;border-radius:9px;background:var(--panel2);
+  border:1px solid var(--line);display:grid;place-items:center;font-size:17px}
 
 /* ---------- lo de dentro ---------- */
-main{padding:16px 14px 30px;max-width:820px;margin:0 auto}
-.top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:14px;flex-wrap:wrap}
-.top h1{font-size:21px;margin:0;font-weight:600}
-.top .sub{color:var(--muted);font-size:12.5px}
+main{padding:16px 14px 30px;max-width:760px;margin:0 auto}
+.top{margin-bottom:16px;padding-bottom:10px;border-bottom:3px double var(--tinta)}
+.top h1{font:700 30px/1.15 var(--serif);margin:0 0 3px;letter-spacing:-.3px}
+.top .sub{color:var(--muted);font-size:13px;display:block}
 .vista{display:none}
 .vista.on{display:block}
 
-.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;
-  padding:16px;margin-bottom:16px;box-shadow:0 2px 10px rgba(0,0,0,.25)}
-.card>h2{font-size:16px;color:var(--acc);margin:0 0 12px;font-weight:600}
-.card.aviso{border-color:var(--acc);border-width:2px}
-.mini{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 13px;margin-bottom:10px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:4px;
+  padding:16px 15px;margin-bottom:16px}
+/* EL TITULAR DE CADA CAJA. En negro y en serif, como en un periodico:
+   el rojo se reserva para lo que urge, y si todo va en rojo nada urge. */
+.card>h2{font:700 20px/1.25 var(--serif);color:var(--tinta);margin:0 0 12px;
+  padding-bottom:9px;border-bottom:1px solid var(--line)}
+.card.aviso{border:2px solid var(--acc);background:#fffaf9}
+.card.aviso>h2{color:var(--acc);border-bottom-color:var(--acc)}
+.mini{background:var(--panel2);border:1px solid var(--line);border-radius:4px;
+  padding:13px;margin-bottom:10px}
 .mini:last-child{margin-bottom:0}
-.mini .nm{font-size:15.5px;font-weight:600}
-.mini .est{color:var(--muted);font-size:13.5px;margin-top:2px;word-wrap:break-word}
-.mini.jefe{border-color:var(--acc)}
-.mini.jefe .nm{font-size:17px}
-.mini.hijo{margin-left:16px;border-left:3px solid var(--acc)}
-.mini .dentro{color:var(--muted);font-size:11.5px;margin-top:1px;opacity:.75}
-.mini .m{color:var(--muted);font-size:12px;margin-top:6px;display:flex;gap:12px;flex-wrap:wrap}
-.grupo{color:var(--muted);font-size:11.5px;letter-spacing:.6px;text-transform:uppercase;
-  font-weight:700;margin:16px 0 8px}
+.mini .nm{font-size:17px;font-weight:600;line-height:1.35}
+.mini .est{color:#3c424f;font-size:15px;margin-top:4px;word-wrap:break-word;line-height:1.45}
+.mini.jefe{border-left:4px solid var(--tinta);background:#fff}
+.mini.jefe .nm{font:700 19px/1.3 var(--serif)}
+.mini.hijo{margin-left:14px;border-left:4px solid var(--acc)}
+.mini .dentro{color:var(--muted);font-size:12.5px;margin-top:3px}
+.mini .m{color:var(--muted);font-size:13px;margin-top:8px;display:flex;gap:14px;flex-wrap:wrap}
+.grupo{color:var(--muted);font-size:12px;letter-spacing:.8px;text-transform:uppercase;
+  font-weight:700;margin:18px 0 8px;border-bottom:1px solid var(--line);padding-bottom:4px}
 .grupo:first-child{margin-top:0}
 
-.chk{display:inline-block;font-size:12px;padding:4px 10px;border-radius:12px;margin:0 6px 0 0}
-.chkok{background:#173d2c;color:var(--ok)}
-.chkbad{background:#402424;color:var(--bad)}
-.chkinfo{background:#1c2947;color:#c6d0ec}
-.dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;display:inline-block;margin-right:7px}
+.chk{display:inline-block;font-size:13px;font-weight:600;padding:5px 11px;border-radius:13px;margin:0 6px 6px 0}
+.chkok{background:#e2f0e8;color:#14532d}
+.chkbad{background:#fbe5e3;color:#8c1d18}
+.chkinfo{background:#ebedf2;color:#333a4d}
+.dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto;display:inline-block;margin-right:8px}
 .dot.va{background:var(--ok)} .dot.atascado{background:var(--bad)}
-.dot.parado{background:#5a6a92} .dot.espera{background:var(--warn)}
+.dot.parado{background:#9aa0ad} .dot.espera{background:var(--warn)}
 
-.acc{background:var(--acc);color:#1a1206;padding:12px 18px;font-weight:600;font-size:15px}
+/* Botones: 46 px de alto minimo. Con menos, el dedo falla — y el 99% de
+   las veces esto se usa con el dedo (palabras suyas, muchas veces). */
+.acc{background:var(--acc);color:#fff;padding:13px 18px;font-weight:700;font-size:16px;min-height:46px}
 .acc:active{background:var(--acc2)}
-.sec{background:#1c2947;color:#c6d0ec;border:1px solid var(--line);padding:11px 16px;font-size:14.5px}
-.sec:active{background:#243258}
-.sec.fin{color:var(--ok)}
-.row{display:flex;gap:9px;margin-top:10px;align-items:stretch}
-.row>*{flex:1}
+.sec{background:#fff;color:var(--tinta);border:1px solid #b7b0a0;padding:12px 16px;
+  font-size:15px;font-weight:600;min-height:46px}
+.sec:active{background:#efece4}
+.sec.fin{color:var(--ok);border-color:#9bc2ab}
+.row{display:flex;gap:9px;margin-top:10px;align-items:stretch;flex-wrap:wrap}
+.row>*{flex:1 1 130px}
 .row .estrecho{flex:0 0 auto}
 button[disabled]{opacity:.45}
 
-label{display:block;color:var(--muted);font-size:11.5px;text-transform:uppercase;
-  letter-spacing:.4px;font-weight:600;margin-bottom:6px}
-textarea,input{width:100%;background:#0a1120;color:var(--txt);border:1px solid var(--line);
-  padding:10px 11px;border-radius:7px;font-size:16px}
-textarea:focus,input:focus{outline:none;border-color:var(--acc)}
+label{display:block;color:var(--muted);font-size:12px;text-transform:uppercase;
+  letter-spacing:.5px;font-weight:700;margin-bottom:6px}
+textarea,input{width:100%;background:#fff;color:var(--txt);border:1px solid #b7b0a0;
+  padding:12px;border-radius:4px;font-size:16px}
+textarea:focus,input:focus{outline:2px solid var(--acc);outline-offset:-2px;border-color:var(--acc)}
 textarea{resize:vertical;min-height:92px}
-#mic.on,#micsol.on{background:var(--bad);color:#fff;animation:pulse 1.1s infinite}
+.sec.on{background:var(--bad);color:#fff;border-color:var(--bad);animation:pulse 1.1s infinite}
 @keyframes pulse{50%{opacity:.55}}
 
-.bar{height:6px;background:#0a1120;border-radius:4px;overflow:hidden;margin-top:9px}
+.bar{height:8px;background:#e5e0d4;border-radius:4px;overflow:hidden;margin-top:9px}
 .bar i{display:block;height:100%;background:var(--acc);border-radius:4px}
-.falta{color:var(--muted);font-size:12.5px;margin-top:5px}
+.falta{color:var(--muted);font-size:13px;margin-top:5px}
 /* el ritmo: una barra por dia, catorce. Se dibujan con divs porque la
    pagina no carga ni una libreria y asi sigue siendo un solo archivo. */
 .ritmo{display:flex;align-items:flex-end;gap:4px;height:96px;margin:6px 0 8px}
 .rcol{flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%}
 .rbar{background:var(--acc);border-radius:3px 3px 0 0;min-height:0}
-.rdia{color:var(--muted);font-size:10.5px;text-align:center;margin-top:4px}
-.vacio{color:var(--muted);font-size:14px;line-height:1.5}
+.rdia{color:var(--muted);font-size:11px;text-align:center;margin-top:4px}
+.vacio{color:#3c424f;font-size:15px;line-height:1.55}
 /* un dato que se quedo de la vuelta anterior porque esta no se pudo mirar:
    se ENSENA con su edad, no se calla. Un numero sin fecha se lee como el de
    ahora, y eso es lo que le hacia mirar un tablero muerto creyendolo vivo. */
-.viejo{color:var(--warn);font-size:12.5px;line-height:1.45;margin:0 0 9px}
+.viejo{color:#7a4f00;background:#fdf3dd;border-left:4px solid var(--warn);
+  font-size:14px;line-height:1.45;margin:0 0 11px;padding:9px 11px;border-radius:0 4px 4px 0}
 .fila{display:flex;justify-content:space-between;align-items:center;gap:10px;
-  padding:10px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+  padding:11px 0;border-bottom:1px solid var(--line);font-size:15px}
 .fila:last-child{border-bottom:0}
-.fila span{color:var(--muted);font-size:13.5px;text-align:right;word-break:break-word}
+.fila span{color:var(--muted);font-size:14px;text-align:right;word-break:break-word}
 
 /* ---------- hilos ---------- */
-.hilo{background:var(--panel2);border:1px solid var(--line);border-radius:9px;margin-bottom:11px;overflow:hidden}
+.hilo{background:#fff;border:1px solid var(--line);border-radius:4px;margin-bottom:11px;overflow:hidden}
 .hilo.cerrando{opacity:0;transform:scale(.96);transition:.35s}
-.hd{display:flex;align-items:center;gap:9px;padding:12px 13px}
-.hd .cid{font-size:10.5px;font-weight:700;letter-spacing:.5px;color:var(--acc2);
-  background:rgba(224,138,62,.13);border-radius:6px;padding:2px 6px;flex:0 0 auto}
-.hd .ht{flex:1;font-weight:600;font-size:15.5px;min-width:0}
-.hd .ch{color:var(--muted);font-size:13px;transition:transform .2s}
+.hd{display:flex;align-items:center;gap:9px;padding:13px;min-height:52px}
+.hd .cid{font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--acc2);
+  background:#f6e7e5;border-radius:4px;padding:3px 7px;flex:0 0 auto}
+.hd .ht{flex:1;font-weight:600;font-size:16.5px;min-width:0;line-height:1.3}
+.hd .ch{color:var(--muted);font-size:14px;transition:transform .2s}
 .hilo.ab .hd .ch{transform:rotate(90deg)}
-.hd .unread{width:8px;height:8px;border-radius:50%;background:var(--acc);flex:0 0 auto}
+.hd .unread{width:9px;height:9px;border-radius:50%;background:var(--acc);flex:0 0 auto}
 /* estado de una solicitud: se ve SIN abrirla, que es lo que el mira */
 .hd .est{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
   border-radius:11px;padding:4px 9px;flex:0 0 auto;white-space:nowrap}
-.est.pedida{background:#26314d;color:#aebbdd}
-.est.marcha{background:#3a2c12;color:var(--acc)}
-.est.hecha{background:#173d2c;color:var(--ok)}
-.hd .ht .quien{color:var(--muted);font-size:12.5px;font-weight:400;margin-top:3px}
+.est.pedida{background:#ebedf2;color:#333a4d}
+.est.marcha{background:#fdefdc;color:#7a4a00}
+.est.hecha{background:#e2f0e8;color:#14532d}
+.hd .ht .quien{color:var(--muted);font-size:13.5px;font-weight:400;margin-top:4px}
 .body{display:none;padding:0 13px 13px;border-top:1px solid var(--line)}
 .hilo.ab .body{display:block}
 .msg{margin:11px 0;display:flex;flex-direction:column;max-width:90%}
 .msg .who{font-size:10.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
-.msg .bu{padding:9px 12px;border-radius:12px;font-size:15px;white-space:pre-wrap;word-wrap:break-word}
-.msg.cap .bu{background:#0a1120;border:1px solid var(--line);border-top-left-radius:4px}
+.msg .bu{padding:10px 13px;border-radius:12px;font-size:16px;line-height:1.5;
+  white-space:pre-wrap;word-wrap:break-word}
+.msg.cap .bu{background:#f2efe7;border:1px solid var(--line);border-top-left-radius:4px}
 .msg.yo{align-self:flex-end;align-items:flex-end}
-.msg.yo .bu{background:var(--acc);color:#191100;border-top-right-radius:4px}
-.msg .ts{font-size:10.5px;color:var(--muted);margin-top:3px}
-.preg{background:#0a1120;border:1px solid var(--acc);border-radius:9px;padding:11px 12px;margin:11px 0}
-.preg .p{font-size:15px;margin-bottom:9px}
+.msg.yo .bu{background:var(--tinta);color:#fff;border-top-right-radius:4px}
+.msg .ts{font-size:11.5px;color:var(--muted);margin-top:3px}
+.preg{background:#fffaf9;border:2px solid var(--acc);border-radius:4px;padding:12px;margin:11px 0}
+.preg .p{font-size:16px;font-weight:600;margin-bottom:10px}
 .preg .ops{display:flex;gap:8px;flex-wrap:wrap}
-.preg .op{background:#1c2947;border:1px solid var(--line);border-radius:8px;padding:10px 14px;
-  font-weight:600;flex:1;min-width:110px;text-align:center}
-.preg .op:active{background:var(--acc);color:#191100}
+.preg .op{background:#fff;border:1px solid #b7b0a0;border-radius:4px;padding:12px 14px;
+  font-weight:700;flex:1 1 110px;min-height:46px;text-align:center}
+.preg .op:active{background:var(--acc);color:#fff;border-color:var(--acc)}
 .subh{border-left:2px solid var(--line);margin:10px 0 10px 4px;padding-left:11px}
-.pasos{margin:6px 0 4px 2px;padding-left:11px;border-left:2px solid var(--line)}
-.pasos div{color:var(--muted);font-size:13.5px;line-height:1.5;margin:6px 0;overflow-wrap:anywhere}
-.abre{cursor:pointer;display:flex;gap:7px;align-items:flex-start;color:var(--txt);font-size:14.5px}
+.pasos{margin:8px 0 4px 2px;padding-left:12px;border-left:3px solid var(--line)}
+.pasos div{color:#3c424f;font-size:15px;line-height:1.55;margin:8px 0;overflow-wrap:anywhere}
+.abre{cursor:pointer;display:flex;gap:8px;align-items:flex-start;color:var(--txt);
+  font-size:16px;min-height:44px;padding:4px 0}
 .abre .fl{flex:0 0 auto;color:var(--acc);transition:transform .15s}
 .abre.on .fl{transform:rotate(90deg)}
 
 #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(140px);
-  background:#1c2947;border:1px solid var(--line);border-radius:11px;padding:11px 17px;font-size:14.5px;
-  z-index:80;transition:.3s;box-shadow:0 8px 26px rgba(0,0,0,.5);max-width:92vw;text-align:center}
+  background:var(--tinta);color:#fff;border-radius:6px;padding:13px 18px;font-size:15px;
+  z-index:80;transition:.3s;box-shadow:0 8px 26px rgba(0,0,0,.3);max-width:92vw;text-align:center}
 #toast.on{transform:translateX(-50%) translateY(0)}
-#toast.err{border-color:var(--bad);color:#ffd7d7}
+#toast.err{background:var(--bad)}
 
 /* ---------- la barra de filtros de ROBOTS ----------
    Copiada del panel del ordenador (_panel_robots.ps1, TIPOS): las mismas
    ocho, con el mismo nombre y en el mismo orden, y se ARRASTRAN para
    cambiarlas de sitio. Orden suya del 10/08: "si ya funciona y nos gusta,
    por que lo vamos a cambiar". */
-.barfil{display:flex;gap:7px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:none}
+/* SE DESLIZA A LO ANCHO CON EL DEDO. Era el fallo que el llamo el 11/08
+   "no se puede uno desplazar lateralmente a todos los filtros": los
+   botones llevaban `touch-action:none` para poder arrastrarlos, y eso le
+   quita al navegador el gesto de deslizar. O sea que los cuatro ultimos
+   filtros no habia forma de alcanzarlos con el dedo. Ahora `pan-x` deja
+   deslizar SIEMPRE, y reordenar es mantener pulsado (lo hace el JS, que
+   solo entonces apaga el gesto). Los dos, y ninguno le quita el otro. */
+.barfil{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none;
+  touch-action:pan-x;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity}
 .barfil::-webkit-scrollbar{display:none}
-.fil{background:#1c2947;color:#c6d0ec;border:1px solid var(--line);border-radius:14px;
-  padding:7px 13px;font-size:13px;white-space:nowrap;flex:0 0 auto;touch-action:none}
-.fil.filon{background:var(--acc);color:#1a1206;border-color:var(--acc);font-weight:600}
-.fil.arrastrando{opacity:.5;transform:scale(1.06)}
-.fil .n{opacity:.7;font-size:11.5px;margin-left:4px}
+.fil{background:#fff;color:var(--tinta);border:1px solid #b7b0a0;border-radius:20px;
+  padding:10px 15px;font-size:13.5px;font-weight:700;letter-spacing:.3px;white-space:nowrap;
+  flex:0 0 auto;min-height:44px;touch-action:pan-x;scroll-snap-align:start}
+.fil.filon{background:var(--tinta);color:#fff;border-color:var(--tinta)}
+.fil.arrastrando{opacity:.6;transform:scale(1.08);box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.fil .n{opacity:.65;font-size:12px;margin-left:5px}
+.fil.filon .n{opacity:.85}
 /* la chincheta de cada robot: igual que en el panel del ordenador */
-.pin{flex:0 0 auto;background:none;font-size:17px;padding:0 4px;opacity:.28;line-height:1}
+.pin{flex:0 0 auto;background:none;font-size:20px;padding:6px;width:44px;height:44px;
+  opacity:.3;line-height:1}
 .pin.on{opacity:1}
 .rob{display:flex;align-items:center;gap:10px}
 .rob .nm{flex:1;min-width:0}
 .rob .sec{flex:0 0 auto}
 /* ---------- categorias que se abren, como un periodico ---------- */
-.cat{background:var(--panel2);border:1px solid var(--line);border-radius:9px;margin-bottom:10px;overflow:hidden}
-.cat>.ch{display:flex;align-items:center;gap:9px;padding:12px 13px;cursor:pointer}
-.cat>.ch b{flex:1;font-size:15px}
-.cat>.ch .cn{background:#1c2947;color:#c6d0ec;border-radius:11px;padding:1px 8px;font-size:11.5px}
+.cat{background:#fff;border:1px solid var(--line);border-radius:4px;margin-bottom:10px;overflow:hidden}
+.cat>.ch{display:flex;align-items:center;gap:10px;padding:14px 13px;cursor:pointer;min-height:52px}
+.cat>.ch b{flex:1;font:700 17px/1.3 var(--serif)}
+.cat>.ch .cn{background:#ebedf2;color:#333a4d;border-radius:11px;padding:2px 9px;
+  font-size:12.5px;font-weight:700}
 .cat>.ch .fl{color:var(--acc);transition:transform .15s}
 .cat.ab>.ch .fl{transform:rotate(90deg)}
 .cat>.cu{display:none;padding:0 11px 11px}
 .cat.ab>.cu{display:block}
 /* un texto largo cortado que se abre entero al tocarlo */
-.mas{color:var(--acc2);font-size:13px;margin-top:6px;cursor:pointer;display:inline-block}
+.mas{color:var(--acc);font-size:14.5px;font-weight:700;margin-top:8px;cursor:pointer;
+  display:inline-block;padding:6px 0;min-height:32px}
 /* un enlace de esta pagina a otra parte de esta pagina */
-.ir{color:var(--acc2);font-size:13.5px;cursor:pointer;display:inline-block;margin-top:8px}
+.ir{color:var(--acc);font-size:15px;font-weight:600;cursor:pointer;display:block;
+  margin-top:4px;padding:9px 0;min-height:40px}
 .ir:active{opacity:.6}
-a.dbx{color:var(--acc2);text-decoration:none;word-break:break-word}
+a.dbx{color:var(--acc);text-decoration:underline;word-break:break-word}
 /* el explicador de una seccion: una linea que dice PARA QUE sirve esto */
-.quees{color:var(--muted);font-size:13.5px;line-height:1.5;margin:0 0 12px}
-.quees b{color:var(--txt)}
+.quees{color:#3c424f;font-size:15px;line-height:1.55;margin:0 0 13px}
+.quees b{color:var(--txt);font-weight:700}
 /* mover algo de sitio con dos flechas, que en un movil no falla nunca */
-.mv{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--line)}
+.mv{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line)}
 .mv:last-child{border-bottom:0}
-.mv b{flex:1;font-size:14.5px;font-weight:500}
-.mv button{background:#1c2947;border:1px solid var(--line);width:38px;height:38px;font-size:15px}
+.mv b{flex:1;font-size:16px;font-weight:500}
+.mv button{background:#fff;border:1px solid #b7b0a0;width:46px;height:46px;font-size:16px}
+
+/* ═══ LO QUE HACE QUE ESTO SEA UN PERIODICO Y NO UNA LISTA ═══════
+   Orden suya del 11/08: "de un vistazo yo pueda entender todo y pueda
+   captar toda la informacion relevante... y la posibilidad de que quien
+   quiera ampliar informacion que pueda ampliar informacion".
+   Tres piezas, y siempre en este orden:
+     ANTETITULO  de que va, en pequeño y en mayusculas
+     TITULAR     la noticia en una frase, grande y en serif
+     ENTRADILLA  lo que hay que saber si no lees nada mas
+   y detras, plegado, el DETALLE para quien quiera ampliar. */
+.ante{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  color:var(--acc);margin-bottom:5px}
+.ante.gris{color:var(--muted)}
+.titular{font:700 24px/1.2 var(--serif);margin:0 0 7px;letter-spacing:-.2px}
+.titular.chico{font-size:20px}
+.entradilla{font-size:16.5px;line-height:1.55;color:#2b303b;margin:0 0 8px}
+.firma{font-size:13px;color:var(--muted);margin-top:8px;
+  border-top:1px solid var(--line);padding-top:7px}
+/* la portada: la noticia grande de arriba, separada por un filete doble */
+.plomo{border-bottom:3px double var(--tinta);padding-bottom:14px;margin-bottom:14px}
+.plomo:last-child{border-bottom:0;padding-bottom:0;margin-bottom:0}
+
+/* ═══ LA CAJA DE COMENTAR, QUE VA EN TODAS LAS SECCIONES ═════════
+   Orden suya del 11/08: "en cada seccion, en cada parte de la oficina,
+   que yo pueda dejar un comentario y le llegue directamente al capataz,
+   y que lleve el contexto de donde he dejado yo el comentario". */
+.coment{background:#f7f4ec;border:1px dashed #b7b0a0;border-radius:4px;
+  padding:13px;margin:16px 0 0}
+.coment .ante{color:var(--muted)}
+.coment .ctx{font-size:13px;color:var(--muted);margin:7px 0 0;line-height:1.45}
+.coment textarea{min-height:76px;margin-top:8px}
 
 @media(min-width:900px){
-  main{padding:22px 26px 40px}
-  .top h1{font-size:23px}
+  main{padding:24px 26px 44px}
+  .top h1{font-size:36px}
+  .titular{font-size:27px}
 }
 </style>
 </head>
@@ -225,10 +306,14 @@ a.dbx{color:var(--acc2);text-decoration:none;word-break:break-word}
 <main>
   <div class="top"><h1 id="titulo">Inicio</h1><span class="sub" id="sub">cargando…</span></div>
 
-  <!-- ═══ INICIO ═══ -->
+  <!-- ═══ INICIO · LA PORTADA ═══
+       Como la primera plana de un periódico: arriba lo que URGE (lo que
+       depende de él), debajo la noticia del día (cómo va la fábrica) y
+       al final los breves. Nada de listas planas: antetítulo, titular,
+       entradilla, y el detalle plegado detrás de "ampliar". -->
   <section class="vista on" id="v-inicio">
     <div class="card aviso" id="c-espera" style="display:none">
-      <h2>⚠️ TE ESTÁ ESPERANDO A TI</h2>
+      <h2>⚠️ ESTO SOLO PUEDES HACERLO TÚ</h2>
       <div id="espera"></div>
     </div>
     <div class="card">
@@ -245,6 +330,28 @@ a.dbx{color:var(--acc2);text-decoration:none;word-break:break-word}
         <button class="acc" id="env">Enviarlo</button>
       </div>
     </div>
+  </section>
+
+  <!-- ═══ TE TOCA A TI ═══
+       Sección propia, no una caja escondida dentro de Inicio. Orden suya
+       del 11/08, literal: "debería de haber una sección bien clara con
+       las cosas que yo tengo que hacer... tiene que estar todo bien
+       claro lo que yo tengo que hacer, los pasos, el porqué lo tengo que
+       hacer, porque es importante, porque los agentes no lo pueden hacer".
+       Por eso cada cosa lleva SIEMPRE cuatro respuestas y ninguna se
+       queda en blanco: si un agente no las escribió, la página lo dice
+       en voz alta en vez de dejar el hueco. -->
+  <section class="vista" id="v-tuyo">
+    <div class="card">
+      <h2>✋ POR QUÉ ESTÁS TÚ AQUÍ</h2>
+      <p class="quees">Todo lo que puede hacer un agente, lo hace un agente.
+      Aquí abajo solo hay cosas que <b>la fábrica no puede hacer sin ti</b>:
+      pagar, firmar, entrar con tu cuenta, tocar algo físico o decidir algo
+      que es tuyo. De cada una te digo <b>qué es, por qué importa, por qué
+      no lo puede hacer un agente y los pasos exactos</b>.</p>
+      <div id="tuyoCuenta"></div>
+    </div>
+    <div id="tuyo"></div>
   </section>
 
   <!-- ═══ ROBOTS ═══
@@ -269,8 +376,9 @@ a.dbx{color:var(--acc2);text-decoration:none;word-break:break-word}
         <button class="sec estrecho" id="rvolver" title="Volver a mirar">⟳</button>
       </div>
       <div class="barfil" id="rfiltros"></div>
-      <p class="quees" style="margin:0">Arrastra los botones de arriba para
-      ponerlos en el orden que quieras. La chincheta 📌 sube un robot al
+      <p class="quees" style="margin:0"><b>Desliza los botones de arriba con
+      el dedo</b> para ver todos los filtros. Para cambiarlos de orden,
+      mantén uno pulsado y arrástralo. La chincheta 📌 sube un robot al
       principio de la lista.</p>
     </div>
 
@@ -324,15 +432,19 @@ a.dbx{color:var(--acc2);text-decoration:none;word-break:break-word}
     </div>
   </section>
 
-  <!-- ═══ MANUAL ═══
-       La pestaña Manual del panel del ordenador (PANEL2.html), que en el
-       móvil no estaba: los papeles del proyecto y un buscador que mira
-       dentro de todos a la vez. Los papeles NO viajan en estado.json (son
-       2,2 MB): se bajan de uno en uno y solo si los abre. -->
-  <section class="vista" id="v-manual">
+  <!-- ═══ BIBLIOTECA ═══
+       Se llamaba "Manual", y él lo corrigió el 11/08: "eso de manual, la
+       sección esa de manual, se tendría que llamar biblioteca". Y tiene
+       razón: un manual es UN papel que explica cómo se usa algo; esto son
+       77 papeles de catorce sitios distintos, que es una biblioteca.
+       Los papeles NO viajan en estado.json (son 2,2 MB): se bajan de uno
+       en uno y solo si los abre. -->
+  <section class="vista" id="v-biblioteca">
     <div class="card">
-      <h2>📚 LOS PAPELES DE LA FÁBRICA</h2>
-      <p class="vacio" style="margin:0 0 11px">Todo lo que está escrito del proyecto y de cada módulo. Escribe una palabra y te digo en qué papel está.</p>
+      <h2>📚 LA BIBLIOTECA</h2>
+      <p class="quees">Todo lo que está escrito de la fábrica y de cada
+      aplicación: qué se construye, el plan, lo ya hecho y cómo funciona
+      cada pieza. <b>Escribe una palabra y te digo en qué papel está.</b></p>
       <div class="row">
         <input id="mbusca" placeholder="Buscar: alarmas, hebreo, precio…">
         <button class="sec estrecho" id="mbtn">Buscar</button>
@@ -418,7 +530,7 @@ a.dbx{color:var(--acc2);text-decoration:none;word-break:break-word}
       <p style="margin:10px 0 8px;font-size:14.5px"><b>«Invalid redirect_uri»:</b> falta dar de alta esta
       dirección en tu app. Copia esta línea y pégala en <b>Settings › Redirect URIs</b>:</p>
       <div class="row" style="align-items:center">
-        <code id="uriexacta" style="background:#0a1120;padding:9px;border-radius:6px;font-size:13px;word-break:break-all"></code>
+        <code id="uriexacta" style="background:#f0ece2;padding:10px;border-radius:4px;font-size:13.5px;word-break:break-all"></code>
         <button class="sec estrecho" id="bcopiauri">Copiar</button>
       </div>
       <p style="margin:10px 0 0;font-size:14.5px"><a id="lnkapp" target="_blank" rel="noopener"
@@ -518,6 +630,37 @@ function cuando(iso){
   const h=Math.floor(m/60); if(h<24) return "hace "+h+" h";
   const dd=Math.floor(h/24); return dd===1?"ayer":"hace "+dd+" días";
 }
+/* ── LAS DOS HERRAMIENTAS DE UN PERIÓDICO ──────────────────────────
+   El DÍA, que es como se ordena una portada, y el TITULAR, que es la
+   noticia sin los códigos de dentro de la imprenta. */
+function diaDe(iso){
+  const d = new Date(iso);
+  if(isNaN(d.getTime())) return "SIN FECHA";
+  const marca = x => x.getFullYear()+"-"+x.getMonth()+"-"+x.getDate();
+  if(marca(d) === marca(new Date())) return "HOY";
+  if(marca(d) === marca(new Date(Date.now()-86400000))) return "AYER";
+  return d.toLocaleDateString("es-ES",{weekday:"long", day:"numeric", month:"long"});
+}
+/* Un titular es UNA frase y no lleva jerga. Lo que se va de aquí no se
+   pierde: sigue entero detrás de "Ampliar información". Fuera van los
+   hashes (1be1e995), los códigos de vacuna y de feedback (V-231, FB-12)
+   y los nombres de archivo, que son tres cosas que no significan nada
+   para quien lee esto en el móvil. Sus palabras del 06/08 mandan aquí:
+   "que lo entienda su abuela". */
+function titularDe(t){
+  let s = String(t||"")
+    .replace(/\((?:[0-9a-f]{7,40})\)/gi, " ")
+    .replace(/\b[0-9a-f]{8,40}\b/gi, " ")
+    .replace(/\b(?:V|FB|N|D|R|S|T)-?\d+[a-z]?\b/gi, " ")
+    .replace(/\b[\w.\\/-]+\.(?:js|ps1|md|dart|kt|java|html|json|txt|bat|vbs|ya?ml|css)\b/gi, " ")
+    .replace(/\s{2,}/g, " ").replace(/^[\s,;:·—–-]+/, "").trim();
+  const frase = s.match(/^[^.!?]{15,120}[.!?]/);
+  if(frase) s = frase[0].replace(/[.]$/, "");
+  else if(s.length > 95) s = s.slice(0,95).replace(/[\s—–:,;-]\S*$/, "") + "…";
+  s = s.replace(/[\s:,;—–-]+$/, "");
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : "(sin título)";
+}
+
 /* El cartel de "esto no es de ahora". Lo enciende cualquier campo `_de`,
    que actualizar_oficina.js escribe cuando una seccion se queda con el
    dato de la vuelta anterior porque esta no se pudo medir. */
@@ -826,6 +969,129 @@ async function pedirDentro(hid, texto){
   S.abiertos[hid]=true; S.abiertos[s.id]=true; pintar(); toast("Añadido dentro ✓");
 }
 
+/* ═══ 4b · COMENTAR DESDE CUALQUIER SITIO, CON SU CONTEXTO ══════
+   Orden suya del 11/08, literal: "quiero que en cada seccion, en cada
+   parte del portal este de la oficina, yo pueda dejar un comentario y le
+   llegue directamente al capataz... pero cada comentario que yo deje en
+   un sitio asi especifico, que lleve el contexto de donde he dejado yo
+   el comentario, toda la informacion que hay alli, porque eso va a ser
+   el contexto para que sepa el contexto de mi mensaje y lo entienda
+   mejor y pueda delegar las tareas a los agentes correspondientes".
+
+   POR QUÉ EL CONTEXTO SE CAPTURA AQUÍ Y NO SE DEDUCE DESPUÉS: cuando el
+   capataz lea esto pueden haber pasado horas, y el tablero ya no dirá lo
+   que él estaba mirando. "Esto está mal" sin la foto de lo que había
+   delante no es un encargo, es un acertijo. Así que el comentario viaja
+   con la sección, la hora y lo que se veía en pantalla en ese momento.
+
+   Va a la lista `solicitudes` de buzon.json, que es la ÚNICA que lee un
+   robot de verdad (robots\solicitudes.js). La lista `hilos` no la lee
+   nadie: escribir ahí sería perderlo, y ya pasó. */
+function mandarAlCapataz(texto, seccion, contexto){
+  const t = String(texto||"").trim();
+  if(!t) return Promise.reject(new Error("Escribe o dicta algo primero"));
+  const s = solicitudNueva(t);
+  s.desde_seccion = seccion;
+  s.contexto = (contexto||[]).filter(Boolean);
+  s.contexto_ts = ahora();
+  // El contexto también va DENTRO del mensaje: si el capataz lee el buzón
+  // con una herramienta que no conoce el campo nuevo, lo lee igual.
+  s.mensajes[0].texto = t +
+    "\n\n--- DONDE LO DEJO (lo pone la Oficina, no el) ---\n" +
+    "Seccion: " + seccion + "\n" +
+    s.contexto.map(l=>"  - "+l).join("\n");
+  return editarBuzon(bz=>{ (bz.solicitudes = bz.solicitudes||[]).unshift(s); })
+    .then(()=>{ S.abiertos[s.id]=true; pintar(); return s; });
+}
+
+/* Lo que se veía en cada sección cuando escribió. Corto y en cristiano:
+   es para que el capataz entienda de qué habla, no un volcado. */
+function contextoDe(id){
+  const ags = (S.estado && S.estado.agentes) || [];
+  const h   = (S.estado && S.estado.hecho) || {};
+  const c = ["Cuando lo escribio: " + new Date().toLocaleString("es-ES")];
+  if(S.estado && S.estado.actualizado) c.push("El tablero era de " + cuando(S.estado.actualizado));
+  if(id==="inicio" || id==="proyectos"){
+    c.push(ags.length + " agentes: " +
+      ags.map(a=>a.nombre+" ("+(COMO_VA[a.estado]||a.estado||"?")+")").slice(0,10).join(", "));
+    const at = ags.filter(a=>a.estado==="atascado").map(a=>a.nombre);
+    if(at.length) c.push("Atascados: " + at.join(", "));
+  }
+  if(id==="tuyo"){
+    const esp = (S.estado && S.estado.espera_de_ti) || [];
+    c.push("Le esperan " + esp.length + " cosas: " + esp.map(x=>x.texto||x).join(" | "));
+    const sin = esp.filter(x=>!x.por_que || !x.por_que_yo || !(x.pasos||[]).length);
+    if(sin.length) c.push("SIN EXPLICAR (sin porque o sin pasos): " + sin.map(x=>x.texto||x).join(" | "));
+  }
+  if(id==="robots"){
+    const todos = todosLosRobots();
+    c.push(todos.length + " robots, " + nAbiertos() + " abiertos. Filtro puesto: " + FILTRO);
+    const ab = todos.filter(x=>x.abierto).map(x=>x.nombre);
+    if(ab.length) c.push("Abiertos: " + ab.join(", "));
+    c.push("El ordenador: " + (puenteVivo() ? "escuchando" : "sin dar senales"));
+  }
+  if(id==="hecho"){
+    c.push("Ultimo terminado: " + ((h.commits||[]).slice(0,3)
+      .map(x=>x.donde+" — "+x.texto).join(" | ") || "nada"));
+    c.push("APK preparadas: " + ((h.apks||[]).map(x=>x.nombre).join(", ") || "ninguna"));
+  }
+  if(id==="biblioteca"){
+    c.push("Papeles en la biblioteca: " + ((MAN.indice && (MAN.indice.papeles||[]).length) || "sin abrir todavia"));
+    if(MAN.q) c.push("Estaba buscando: " + MAN.q);
+    if(MAN.abiertoPapel) c.push("Estaba leyendo: " + MAN.abiertoPapel);
+  }
+  if(id==="mensajes"){
+    c.push("Pedidas sin terminar: " + nSolicitudes() + ". Cosas que le cuentan: " + nHilos());
+  }
+  if(id==="ajustes"){
+    const s = (S.estado && S.estado.salud) || {};
+    c.push("Copia de seguridad vieja: " + (s.copia_vieja ? "SI" : "no") +
+           ". Dropbox parado: " + ((s.sincronizacion||{}).parada ? "SI" : "no"));
+  }
+  return c;
+}
+
+/* La caja se PINTA SOLA al final de cada sección. Así no hay forma de
+   añadir una sección nueva y olvidarse de ponerle la caja, que es como
+   se muere una regla de estas. */
+function pintarComentarios(){
+  VISTAS.forEach(v=>{
+    const sec = document.getElementById("v-"+v.id);
+    if(!sec || sec.querySelector(":scope > .coment")) return;
+    const caja = el("div","coment");
+    caja.appendChild(el("div","ante","¿ALGO QUE DECIR DE ESTA PÁGINA?"));
+    caja.appendChild(el("div","quees",
+      "Escríbelo aquí y le llega al capataz con la foto de lo que estás "+
+      "viendo ahora mismo, para que sepa de qué hablas sin preguntártelo."));
+    const ta = el("textarea");
+    ta.placeholder = "Lo que sea de esta pantalla: qué está mal, qué falta, qué quieres…";
+    caja.appendChild(ta);
+    const ctx = el("div","ctx");
+    caja.appendChild(ctx);
+    const fila = el("div","row");
+    const bm = el("button","sec estrecho","🎤"); bm.title="Dictar";
+    bm.onclick = ()=> microEn(ta, bm);
+    const bv = el("button","sec","Ver qué le mando");
+    bv.onclick = ()=>{
+      const abierto = ctx.textContent !== "";
+      ctx.textContent = abierto ? "" : ("Le llega esto además de tu texto — " +
+        contextoDe(v.id).join(" · "));
+      bv.textContent = abierto ? "Ver qué le mando" : "Ocultarlo";
+    };
+    const b = el("button","acc","Mandárselo al capataz");
+    b.onclick = ()=>{
+      b.disabled = true;
+      mandarAlCapataz(ta.value, v.nombre, contextoDe(v.id))
+        .then(()=>{ ta.value=""; ctx.textContent=""; toast("Mandado ✓ lo tienes en Mensajes"); })
+        .catch(e=> toast(e.message, true))
+        .then(()=>{ b.disabled = false; });
+    };
+    fila.appendChild(bm); fila.appendChild(bv); fila.appendChild(b);
+    caja.appendChild(fila);
+    sec.appendChild(caja);
+  });
+}
+
 /* ═══ 5 · LAS SECCIONES (la barra de arriba) ══════════════════ */
 /* Una pestaña con un número al lado obliga a preguntarse QUÉ cuenta ese
    número. Él lo preguntó el 10/08 —"me sale 42 y no sé por qué"— y tenía
@@ -834,14 +1100,16 @@ async function pedirDentro(hid, texto){
    que está PASANDO, así que el número es lo que está abierto ahora, y el
    total se cuenta con palabras dentro de la pestaña. */
 const VISTAS = [
-  {id:"inicio",    nombre:"Inicio"},
-  {id:"robots",    nombre:"Robots",    cuenta:()=> nAbiertos()},
-  {id:"proyectos", nombre:"Proyectos", cuenta:()=> nAgentes()},
-  {id:"hecho",     nombre:"Lo hecho"},
-  {id:"manual",    nombre:"Manual"},
-  {id:"mensajes",  nombre:"Mensajes",  cuenta:()=> nSolicitudes() + nHilos()},
-  {id:"ajustes",   nombre:"Ajustes"}
+  {id:"inicio",     nombre:"Portada"},
+  {id:"tuyo",       nombre:"Te toca a ti", cuenta:()=> nTuyo()},
+  {id:"robots",     nombre:"Robots",       cuenta:()=> nAbiertos()},
+  {id:"proyectos",  nombre:"Proyectos",    cuenta:()=> nAgentes()},
+  {id:"hecho",      nombre:"Lo hecho"},
+  {id:"biblioteca", nombre:"Biblioteca"},
+  {id:"mensajes",   nombre:"Mensajes",     cuenta:()=> nSolicitudes() + nHilos()},
+  {id:"ajustes",    nombre:"Ajustes"}
 ];
+function nTuyo(){ return ((S.estado && S.estado.espera_de_ti)||[]).length; }
 function nAgentes(){ return ((S.estado&&S.estado.agentes)||[]).length; }
 function nHilos(){ return ((S.buzon&&S.buzon.hilos)||[]).filter(h=>h.estado!=="cerrado").length; }
 function nSolicitudes(){ return ((S.buzon&&S.buzon.solicitudes)||[]).filter(s=>s.estado!=="hecha").length; }
@@ -884,9 +1152,9 @@ function ver(id, ancla){
     const e = document.getElementById(ancla);
     if(e && e.scrollIntoView) e.scrollIntoView({behavior:"smooth", block:"start"});
   }, 60);
-  // El manual se baja la primera vez que lo abre, no al arrancar: son 62 KB
-  // de índice que no hacen falta para ver cómo va la fábrica.
-  if(id==="manual") arrancarManual();
+  // La biblioteca se baja la primera vez que la abre, no al arrancar: son
+  // 62 KB de índice que no hacen falta para ver cómo va la fábrica.
+  if(id==="biblioteca") arrancarManual();
   if(!ancla) scrollTo({top:0});
 }
 /* TODO ENLAZADO (encargo suyo del 10/08): un botón que te lleva a la
@@ -902,6 +1170,7 @@ function irA(id, texto, ancla){
 function pintar(){
   if(!S.msPrimero && window.performance) S.msPrimero = Math.round(performance.now());
   pintarEspera();
+  pintarTuyo();
   pintarResumen();
   pintarProyectos();
   pintarHecho();
@@ -910,6 +1179,7 @@ function pintar(){
   pintarHilos();
   pintarCfg();
   pintarNav();
+  pintarComentarios();
   const act = S.estado && S.estado.actualizado;
   // Un tablero PARADO se parece a uno tranquilo: las mismas caras, los mismos
   // números. El puente lo rehace cada 15 s, así que si lleva más de 5 minutos
@@ -924,25 +1194,106 @@ function pintar(){
              : "esperando a los agentes");
 }
 
+/* ── LO QUE DEPENDE DE ÉL ──────────────────────────────────────────
+   En la portada va solo el TITULAR y cuántas son: es una llamada, no la
+   noticia entera. La noticia entera está en su sección. */
 function pintarEspera(){
   const c = $("#espera"); c.innerHTML="";
   const esp = (S.estado && S.estado.espera_de_ti) || [];
   $("#c-espera").style.display = esp.length ? "" : "none";
-  esp.forEach(x=>{
+  if(!esp.length) return;
+  c.appendChild(el("div","entradilla", esp.length===1
+    ? "Hay una cosa parada esperándote. Nadie de la fábrica puede hacerla por ti."
+    : "Hay " + esp.length + " cosas paradas esperándote. Ninguna la puede hacer un agente por ti."));
+  esp.slice(0,3).forEach(x=>{
     const d = el("div","mini");
-    const pasos = (x && x.pasos) || [];
-    if(!pasos.length){ d.appendChild(el("div","nm", esc(x.texto||x))); c.appendChild(d); return; }
-    const fila = el("div","abre");
-    fila.appendChild(el("span","fl","▸"));
-    fila.appendChild(el("span","nm", esc(x.texto||x)));
-    const caja = el("div","pasos"); caja.style.display="none";
-    pasos.forEach(p=> caja.appendChild(el("div",null,esc(p))));
-    fila.onclick = ()=>{
-      const abierto = caja.style.display !== "none";
-      caja.style.display = abierto ? "none" : "block";
-      fila.classList.toggle("on", !abierto);
+    d.appendChild(el("div","nm", esc(x.texto||x)));
+    if(x.desde) d.appendChild(el("div","m")).appendChild(el("span",null,"parada desde "+cuando(x.desde)));
+    c.appendChild(d);
+  });
+  if(esp.length>3) c.appendChild(el("div","quees","Y "+(esp.length-3)+" más."));
+  const b = el("button","acc","Ver qué tengo que hacer y cómo");
+  b.style.width="100%"; b.style.marginTop="12px";
+  b.onclick = ()=> ver("tuyo");
+  c.appendChild(b);
+}
+
+/* ── LA SECCIÓN "TE TOCA A TI", ENTERA ─────────────────────────────
+   Cuatro preguntas por cada cosa, y ninguna se queda muda. Orden suya
+   del 11/08: "tiene que estar todo bien claro lo que yo tengo que
+   hacer, los pasos, el por qué lo tengo que hacer, porque es
+   importante, porque los agentes no lo pueden hacer".
+
+   CUANDO UN AGENTE NO ESCRIBIÓ EL PORQUÉ, LA PÁGINA LO DICE.
+   Antes el hueco se quedaba vacío y parecía que la información no
+   existía; ahora sale en rojo con el nombre de quien lo pidió, que es
+   lo que hace que se arregle. Eso es exactamente lo que él llamó
+   "ultra mega incompleto": no faltaba sitio, faltaba el texto. */
+const FALTA_TXT = "Quien te pidió esto no lo explicó. Déjale un comentario aquí abajo y te lo escribe.";
+function pintarTuyo(){
+  const c = $("#tuyo"); if(!c) return;
+  c.innerHTML="";
+  const q = $("#tuyoCuenta"); q.innerHTML="";
+  const esp = (S.estado && S.estado.espera_de_ti) || [];
+
+  if(!esp.length){
+    q.appendChild(el("div","chk chkok","No hay nada esperándote"));
+    q.appendChild(el("div","quees","Ahora mismo la fábrica no necesita nada de ti. "+
+      "Cuando aparezca algo que solo puedas hacer tú, sale aquí y también en la portada."));
+    return;
+  }
+  q.appendChild(el("span","chk chkbad", esp.length + (esp.length===1?" cosa parada":" cosas paradas")));
+  const vieja = esp.filter(x=>x.desde && (Date.now()-new Date(x.desde).getTime())/86400000 > 2).length;
+  if(vieja) q.appendChild(el("span","chk chkinfo", vieja + (vieja===1?" lleva":" llevan")+" más de dos días"));
+
+  esp.forEach((x,i)=>{
+    const caja = el("div","card");
+    caja.appendChild(el("div","ante", "TAREA " + (i+1) + " DE " + esp.length +
+      (x.quien ? " · LA PIDIÓ " + String(x.quien).toUpperCase() : "")));
+    caja.appendChild(el("div","titular chico", esc(x.texto||x)));
+    if(x.desde) caja.appendChild(el("div","entradilla",
+      "Lleva parada desde " + cuando(x.desde) + ". Mientras no lo hagas, ese trabajo no avanza."));
+
+    const apartado = (titulo, texto, falta)=>{
+      const d = el("div","mini");
+      d.appendChild(el("div","ante gris", titulo));
+      const t = el("div","est", texto || FALTA_TXT);
+      if(!texto){ t.style.color = "var(--bad)"; t.style.fontWeight = "600"; }
+      d.appendChild(t);
+      caja.appendChild(d);
+      return d;
     };
-    d.appendChild(fila); d.appendChild(caja); c.appendChild(d);
+    apartado("POR QUÉ IMPORTA", x.por_que && esc(x.por_que));
+    apartado("POR QUÉ NO PUEDE HACERLO UN AGENTE", x.por_que_yo && esc(x.por_que_yo));
+
+    const pasos = (x && x.pasos) || [];
+    const dp = el("div","mini");
+    dp.appendChild(el("div","ante gris","LOS PASOS, UNO A UNO"));
+    if(!pasos.length){
+      const t = el("div","est", FALTA_TXT);
+      t.style.color = "var(--bad)"; t.style.fontWeight = "600"; dp.appendChild(t);
+    }else{
+      const lista = el("div","pasos");
+      pasos.forEach(p=> lista.appendChild(el("div",null,esc(p))));
+      dp.appendChild(lista);
+    }
+    caja.appendChild(dp);
+
+    // "Ya está hecho" lo tiene que poder decir ÉL: si no, la cosa se
+    // queda en el tablero hasta que un agente se dé cuenta, y él ve una
+    // lista de deberes que ya hizo. Se lo cuenta al capataz por el
+    // mismo camino que un comentario, que es el único que llega.
+    const b = el("button","sec fin","✓ Esto ya lo he hecho");
+    b.style.width="100%"; b.style.marginTop="12px";
+    b.onclick = ()=>{
+      b.disabled = true;
+      mandarAlCapataz("Ya he hecho: " + (x.texto||x),
+        "Te toca a ti", ["Tarea: " + (x.texto||x), x.quien ? "La pidió: "+x.quien : ""])
+        .then(()=> toast("Avisado ✓ el capataz lo quita del tablero"))
+        .catch(e=>{ b.disabled=false; toast(e.message, true); });
+    };
+    caja.appendChild(b);
+    c.appendChild(caja);
   });
 }
 
@@ -1077,51 +1428,59 @@ function lista(sel, ls, vacio){
 function pintarHecho(){
   const h = (S.estado && S.estado.hecho) || {};
 
-  /* POR CATEGORÍAS Y SE ABRE, COMO UN PERIÓDICO (encargo suyo del 10/08).
-     Antes salía una lista corrida donde cada línea era el mensaje de un
-     commit cortado a la mitad: "mis bots: …". Ahora se agrupa por la
-     aplicación a la que pertenece, se abre la que le interese, y cada
-     línea se abre entera al tocarla. La primera, abierta; las demás,
-     cerradas: se ve de qué hay noticias sin bajar media pantalla. */
+  /* ESTO ES UN PERIÓDICO, NO UN LISTADO DE COMMITS.
+     Él lo llamó el 11/08 "ultra mega mal, realmente mal e inútil", y el
+     motivo era que estaba ordenado por APLICACIÓN: entrabas y veías
+     catorce cajones cerrados, sin saber cuál tenía novedades ni de
+     cuándo eran. Un periódico no se ordena por sección: se ordena por
+     lo NUEVO, y la sección es solo la etiqueta de encima.
+
+     Así que ahora: por DÍAS (hoy, ayer, y la fecha), lo último arriba,
+     lo primero de todo destacado como el suelto de portada, el nombre
+     de la aplicación como antetítulo, y el titular LIMPIO — sin los
+     códigos que solo entendemos nosotros (los hashes, los V-nnn, los
+     FB-nn, los nombres de archivo). Lo entero sigue estando, detrás de
+     "ampliar", que es la otra mitad de la orden: "la posibilidad de que
+     quien quiera ampliar información que pueda ampliar información". */
   const c = $("#hechoLista"); c.innerHTML="";
   const cs = h.commits || [];
   conAviso(c, h.commits_de, "qué se ha terminado");
-  if(!cs.length) c.appendChild(el("div","vacio","Todavía no hay nada terminado que enseñar."));
-  const cats = [];
-  cs.forEach(x=>{
-    const k = esc(x.donde) || "sin nombre";
-    let g = cats.find(y=>y.k===k);
-    if(!g){ g = {k:k, ls:[]}; cats.push(g); }
-    g.ls.push(x);
-  });
-  cats.forEach((g,i)=>{
-    const clave = "cat_"+g.k;
-    if(S.abiertos[clave]===undefined) S.abiertos[clave] = (i===0);
-    const box = el("div","cat"+(S.abiertos[clave]?" ab":""));
-    const ch = el("div","ch");
-    ch.appendChild(el("span","fl","▶"));
-    ch.appendChild(el("b", null, g.k));
-    ch.appendChild(el("span","cn", String(g.ls.length)));
-    ch.onclick = ()=>{ S.abiertos[clave] = !S.abiertos[clave]; box.classList.toggle("ab"); };
-    box.appendChild(ch);
-    const cu = el("div","cu");
-    g.ls.forEach((x,j)=>{
-      const d = el("div","mini");
-      const t = esc(x.texto);
-      const corto = t.length > 90 ? t.slice(0,88) + "…" : t;
-      const nm = el("div","nm", corto);
-      d.appendChild(nm);
-      if(t.length > 90){
-        const mas = el("div","mas","Leerlo entero");
-        mas.onclick = ()=>{ nm.textContent = t; mas.remove(); };
-        d.appendChild(mas);
-      }
-      d.appendChild(el("div","m")).appendChild(el("span",null, cuando(x.ts)));
-      cu.appendChild(d);
+  if(!cs.length){
+    c.appendChild(el("div","vacio","Todavía no hay nada terminado que enseñar."));
+  }else{
+    const dias = [];
+    cs.forEach(x=>{
+      const k = diaDe(x.ts);
+      let g = dias.find(y=>y.k===k);
+      if(!g){ g = {k:k, ls:[]}; dias.push(g); }
+      g.ls.push(x);
     });
-    box.appendChild(cu);
-    c.appendChild(box);
-  });
+    dias.forEach((g,gi)=>{
+      c.appendChild(el("div","grupo", g.k + " · " + g.ls.length +
+        (g.ls.length===1 ? " cosa terminada" : " cosas terminadas")));
+      g.ls.forEach((x,j)=>{
+        const primero = (gi===0 && j===0);
+        const d = el("div", primero ? "mini jefe" : "mini");
+        d.appendChild(el("div","ante", (primero ? "LO ÚLTIMO · " : "") + String(esc(x.donde)||"la fábrica").toUpperCase()));
+        const t = esc(x.texto);
+        const tit = titularDe(t);
+        d.appendChild(el("div","nm", tit));
+        // El resto solo se ofrece si de verdad hay resto que leer.
+        if(t.length > tit.length + 3){
+          const cuerpo = el("div","est"); cuerpo.style.display="none"; cuerpo.textContent = t;
+          const mas = el("div","mas","▾ Ampliar información");
+          mas.onclick = ()=>{
+            const ab = cuerpo.style.display === "none";
+            cuerpo.style.display = ab ? "" : "none";
+            mas.textContent = ab ? "▴ Cerrar" : "▾ Ampliar información";
+          };
+          d.appendChild(mas); d.appendChild(cuerpo);
+        }
+        d.appendChild(el("div","m")).appendChild(el("span",null, cuando(x.ts)));
+        c.appendChild(d);
+      });
+    });
+  }
   c.appendChild(irA("proyectos","Ver cómo va cada aplicación"));
 
   /* LAS APK, CON ENLACE QUE ABRE DROPBOX (encargo suyo del 10/08: "que me
@@ -1272,11 +1631,60 @@ function pintarRobots(){
     d.appendChild(bt);
     card.appendChild(d);
   });
+  /* LOS DOS BOTONES DE GOLPE, LOS MISMOS QUE EN EL ORDENADOR.
+     En el panel del ordenador (_panel_robots.ps1) están desde el
+     principio: ABRIR ESTOS n abre todo lo que se está viendo, y CERRAR
+     LOS n ABIERTOS cierra todos los abiertos, se vean o no. Faltaban
+     aquí, y es de las cosas que él quiere "idénticas".
+     La única diferencia, y es a propósito: ABRIR pregunta cuando son
+     más de tres. En el ordenador hay un ratón; aquí un dedo, y abrir
+     nueve agentes sin querer se paga en créditos toda la noche. */
+  const cerrables = todos.filter(x=>x.abierto);
+  const abribles  = ls.filter(x=>!x.abierto);
+  if(abribles.length || cerrables.length){
+    const golpe = el("div","row");
+    if(abribles.length){
+      const ba = el("button","sec","ABRIR ESTOS " + abribles.length);
+      ba.onclick = ()=>{
+        if(abribles.length > 3 &&
+           !confirm("¿Abrir " + abribles.length + " robots a la vez?\n\n" +
+                    "Cada uno que sea un agente gasta créditos mientras esté abierto.")) return;
+        mandarVarios(abribles, "abrir");
+      };
+      golpe.appendChild(ba);
+    }
+    if(cerrables.length){
+      const bc = el("button","sec fin","CERRAR LOS " + cerrables.length + " ABIERTOS");
+      bc.onclick = ()=> mandarVarios(cerrables, "cerrar");
+      golpe.appendChild(bc);
+    }
+    card.appendChild(golpe);
+  }
+
   c.appendChild(card);
   const pie = el("div","card");
   pie.appendChild(el("div","quees","Los robots los abre tu ordenador de casa. Si quieres ver lo que han ido dejando hecho:"));
   pie.appendChild(irA("hecho","Lo que ya está terminado"));
   c.appendChild(pie);
+}
+
+/* Varios de golpe. Se mandan de uno en uno pero en UNA sola escritura de
+   ordenes.json: si se escribiera una vez por robot, las últimas pisarían
+   a las primeras (Dropbox devuelve conflicto) y solo se abriría una. */
+async function mandarVarios(ls, que){
+  if(S.demo){ toast("Esto es el ejemplo: conecta para mandar de verdad"); return; }
+  ls.forEach(x=>{ S.pedidas[x.id] = (que==="abrir"?"abriendo…":"cerrando…"); G.usados[x.id]=Date.now(); });
+  guardarGustos(); pintar();
+  try{
+    const o = await bajar(F_ORDENES);
+    const datos = o.datos || {v:1, ordenes:[]};
+    datos.ordenes = (datos.ordenes||[]).slice(-9);
+    ls.forEach(x=> datos.ordenes.push({ id: idCorto("O-"), robot: x.id, que, ts: ahora() }));
+    datos.actualizado = ahora();
+    await subir(F_ORDENES, datos, o.rev);
+    toast((que==="abrir"?"Abriendo ":"Cerrando ") + ls.length + " robots…");
+    setTimeout(()=>{ cargar().catch(()=>{}); }, 6000);
+  }catch(e){ ls.forEach(x=>delete S.pedidas[x.id]); toast(e.message, true); pintar(); }
 }
 
 /* ── LA BARRA DE FILTROS, LA MISMA QUE EN EL ORDENADOR ─────────
@@ -1350,14 +1758,30 @@ function pintarFiltrosRobots(){
    de otro se cambian de sitio. El .dataset.movido evita que soltar el
    dedo cuente además como una pulsación. */
 function arrastrable(b, caja, alSoltar){
-  let dentro = false;
+  let dentro = false, espera = null, x0 = 0, y0 = 0;
   b.addEventListener("pointerdown", e=>{
-    dentro = true; delete b.dataset.movido;
-    b.setPointerCapture(e.pointerId);
-    b.classList.add("arrastrando");
+    delete b.dataset.movido;
+    x0 = e.clientX; y0 = e.clientY;
+    clearTimeout(espera);
+    // CON EL RATÓN se arrastra desde el primer instante; CON EL DEDO hay
+    // que MANTENER PULSADO un poco. Y no es un capricho: en un móvil el
+    // gesto corto sobre esa barra es DESLIZARLA, y quitárselo es lo que
+    // dejaba los últimos filtros fuera del alcance del dedo (11/08).
+    espera = setTimeout(()=>{
+      dentro = true;
+      b.style.touchAction = "none";      // solo AHORA se apaga el deslizar
+      try{ b.setPointerCapture(e.pointerId); }catch(err){}
+      b.classList.add("arrastrando");
+      if(navigator.vibrate) navigator.vibrate(12);
+    }, e.pointerType === "mouse" ? 0 : 320);
   });
   b.addEventListener("pointermove", e=>{
-    if(!dentro) return;
+    if(!dentro){
+      // se ha movido antes de tiempo: está deslizando la barra, no
+      // arrastrando el botón. Se cancela el arrastre y no se le estorba.
+      if(Math.abs(e.clientX-x0) > 8 || Math.abs(e.clientY-y0) > 8) clearTimeout(espera);
+      return;
+    }
     const o = document.elementFromPoint(e.clientX, e.clientY);
     const otro = o && o.closest ? o.closest(".fil") : null;
     if(!otro || otro===b || otro.parentNode!==caja) return;
@@ -1367,6 +1791,8 @@ function arrastrable(b, caja, alSoltar){
     else caja.insertBefore(b, otro);
   });
   const fin = ()=>{
+    clearTimeout(espera);
+    b.style.touchAction = "";            // se le devuelve el deslizar
     if(!dentro) return;
     dentro = false;
     b.classList.remove("arrastrando");
@@ -1571,7 +1997,7 @@ function nodoHilo(h, padreId){
    cambiado, no se vuelve a bajar nunca. */
 const F_MANUAL = "/manual.json";
 const MAN_LS   = "oficina.man.";        // una clave por papel
-const MAN = { indice:null, textos:{}, cargando:false, todos:false, q:"" };
+const MAN = { indice:null, textos:{}, cargando:false, todos:false, q:"", abierto:null, abiertoPapel:null };
 
 const escH = s => String(s==null?"":s)
   .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
@@ -1612,27 +2038,52 @@ async function arrancarManual(){
   verIndiceManual();
 }
 
-/* ── el índice: por el proyecto y por cada módulo ─────────────── */
+/* ── el índice: por el proyecto y por cada módulo ───────────────
+   PLEGADO, y no por gusto: son 77 papeles en 14 grupos (medido el
+   11/08), y pintarlos todos abiertos era un scroll de catorce
+   pantallas en el móvil para llegar al último módulo. Ahora se ven
+   los 14 nombres de una vez y se abre el que quiere. */
+const iconoGrupo = t => t==="proyecto" ? "📱" : t==="fabrica" ? "🏭" : "🧩";
+
+/* Un papel se llama por lo que ES, no por su nombre de archivo (11/08).
+   "NEXT.md", "EN_CURSO.md" o "LOG.md" son jerga igual que el inglés, y
+   esta página la lee en el móvil quien no programa. El nombre de verdad
+   ya estaba escrito: la frase en español de la tabla PAPELES, que aquí
+   llega como desc. El archivo sigue viajando dentro del papel para que
+   el buscador lo encuentre si lo escribe; solo deja de estar a la vista. */
+const tituloPapel = p => String((p && (p.desc || p.nombre)) || "").replace(/\s*\.\s*$/, "");
+
 function verIndiceManual(){
   const ps = MAN.indice.papeles;
   const grupos = [];
   ps.forEach(p=>{
     let g = grupos.find(x=>x.id===p.grupo);
-    if(!g){ g = {id:p.grupo, de:p.de, papeles:[]}; grupos.push(g); }
+    if(!g){ g = {id:p.grupo, de:p.de, tipo:p.tipo, papeles:[]}; grupos.push(g); }
     g.papeles.push(p);
   });
+  // La primera vez, abierto solo el del proyecto: es el que mira siempre.
+  if(!MAN.abierto){
+    MAN.abierto = {};
+    const pr = grupos.find(g=>g.tipo==="proyecto") || grupos[0];
+    if(pr) MAN.abierto[pr.id] = true;
+  }
   let html = "";
   grupos.forEach(g=>{
-    html += '<div class="card"><h2>'+escH(g.id==="el-proyecto" ? "📱 "+g.de : "🧩 "+g.de)+'</h2>';
-    g.papeles.forEach(p=>{
+    const ab = !!MAN.abierto[g.id];
+    const peso = g.papeles.reduce((s,p)=>s+p.bytes,0);
+    html += '<div class="card">'
+          + '<div class="mini" data-grupo="'+escH(g.id)+'" style="cursor:pointer">'
+          + '<div class="nm">'+(ab?"▾ ":"▸ ")+escH(iconoGrupo(g.tipo)+" "+g.de)+'</div>'
+          + '<div class="m"><span>'+g.papeles.length+' papeles</span><span>'+kb(peso)+'</span></div></div>';
+    if(ab) g.papeles.forEach(p=>{
       html += '<div class="mini" data-papel="'+escH(p.id)+'" style="cursor:pointer">'
-            + '<div class="nm">'+escH(p.desc)+'</div>'
-            + '<div class="m"><span>'+escH(p.nombre)+'</span><span>'+kb(p.bytes)+'</span></div></div>';
+            + '<div class="nm">'+escH(tituloPapel(p))+'</div>'
+            + '<div class="m"><span>'+kb(p.bytes)+'</span></div></div>';
     });
     html += '</div>';
   });
   mview(html);
-  migasM("Todos los papeles · "+ps.length+" en total");
+  migasM("Todos los papeles · "+ps.length+" en "+grupos.length+" sitios");
 }
 
 /* ── traer un papel (y no volver a traerlo nunca si no ha cambiado) ── */
@@ -1668,13 +2119,14 @@ const papelPorId = id => (MAN.indice.papeles||[]).find(p=>p.id===id);
 async function abrirPapel(id){
   const p = papelPorId(id);
   if(!p) return;
-  mview('<div class="card"><p class="vacio">Abriendo '+escH(p.nombre)+'…</p></div>');
-  migasM('<a href="#" data-volver="1">Todos los papeles</a> › <b>'+escH(p.nombre)+'</b>');
+  MAN.abiertoPapel = tituloPapel(p);
+  mview('<div class="card"><p class="vacio">Abriendo '+escH(tituloPapel(p))+'…</p></div>');
+  migasM('<a href="#" data-volver="1">Todos los papeles</a> › <b>'+escH(tituloPapel(p))+'</b>');
   let t;
   try{ t = await traerPapel(p); }
   catch(e){ mview('<div class="card"><p class="vacio">No he podido abrirlo: '+escH(e.message)+'</p></div>'); return; }
-  mview('<div class="card"><h2>'+escH(p.desc)+'</h2>'
-      + '<p class="sub" style="margin:0 0 4px">'+escH(p.de)+' · '+escH(p.nombre)+'</p></div>'
+  mview('<div class="card"><h2>'+escH(tituloPapel(p))+'</h2>'
+      + '<p class="sub" style="margin:0 0 4px">'+escH(p.de)+'</p></div>'
       + renderMD(t));
   scrollTo({top:0});
 }
@@ -1690,20 +2142,20 @@ function renderMD(t){
   x = x.replace(/^## (.*)$/gm,'<h3 style="color:var(--acc);border-bottom:1px solid var(--line);padding-bottom:5px;margin:24px 0 8px">$1</h3>');
   x = x.replace(/^# (.*)$/gm,'<h2 style="margin:6px 0 10px">$1</h2>');
   x = x.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>');
-  x = x.replace(/`([^`]+)`/g,'<code style="background:#0a1120;padding:1px 6px;border-radius:4px;color:var(--acc)">$1</code>');
+  x = x.replace(/`([^`]+)`/g,'<code style="background:#f0ece2;padding:1px 6px;border-radius:4px;color:var(--acc2)">$1</code>');
   x = x.replace(/^&gt; (.*)$/gm,'<blockquote style="border-left:3px solid var(--acc);padding-left:12px;color:var(--muted);margin:10px 0">$1</blockquote>');
   x = x.replace(/^(?:[-*]|\d+\.)\s+(.*)$/gm,'<li style="margin:4px 0">$1</li>');
   x = x.replace(/(?:<li[^>]*>[\s\S]*?<\/li>\n?)+/g, m=>'<ul style="margin:8px 0 14px;padding-left:20px">'+m+'</ul>');
   bloques.forEach((b,i)=>{ x = x.replace("@@COD"+i+"@@",
-    '<pre style="background:#0a1120;padding:12px;border-radius:6px;overflow-x:auto;font-size:13px;color:#c6d0ec">'+b+'</pre>'); });
-  return '<div class="card" style="line-height:1.7;font-size:15px;word-wrap:break-word">'+x+'</div>';
+    '<pre style="background:#f0ece2;padding:12px;border-radius:4px;overflow-x:auto;font-size:13.5px;color:#16181d">'+b+'</pre>'); });
+  return '<div class="card" style="line-height:1.75;font-size:17px;word-wrap:break-word">'+x+'</div>';
 }
 
 /* ── buscar ───────────────────────────────────────────────────── */
 function recorte(texto, i, largo){
   const desde = Math.max(0, i-80), hasta = Math.min(texto.length, i+largo+80);
   return (desde?"…":"") + escH(texto.slice(desde, i))
-       + '<mark style="background:var(--acc);color:#08101f">'+escH(texto.slice(i,i+largo))+'</mark>'
+       + '<mark style="background:#ffe6a3;color:#16181d">'+escH(texto.slice(i,i+largo))+'</mark>'
        + escH(texto.slice(i+largo, hasta)) + (hasta<texto.length?"…":"");
 }
 function buscarManual(){
@@ -1733,9 +2185,9 @@ function buscarManual(){
     html += '<div class="card"><h2>Lo dice aquí dentro</h2>';
     enTexto.forEach(r=>{
       html += '<div class="mini" data-papel="'+escH(r.p.id)+'" style="cursor:pointer">'
-            + '<div class="nm">'+escH(r.p.desc)+'</div>'
+            + '<div class="nm">'+escH(tituloPapel(r.p))+'</div>'
             + '<div class="est" style="margin-top:6px">'+r.html+'</div>'
-            + '<div class="m"><span>'+escH(r.p.de)+'</span><span>'+escH(r.p.nombre)+'</span></div></div>';
+            + '<div class="m"><span>'+escH(r.p.de)+'</span><span>'+kb(r.p.bytes)+'</span></div></div>';
     });
     html += '</div>';
   }
@@ -1743,9 +2195,9 @@ function buscarManual(){
     html += '<div class="card"><h2>Papeles que hablan de eso</h2>';
     enTitulos.forEach(r=>{
       html += '<div class="mini" data-papel="'+escH(r.p.id)+'" style="cursor:pointer">'
-            + '<div class="nm">'+escH(r.p.desc)+'</div>'
+            + '<div class="nm">'+escH(tituloPapel(r.p))+'</div>'
             + (r.tit.length ? '<div class="est" style="margin-top:6px">'+escH(r.tit.slice(0,4).join(" · "))+'</div>' : "")
-            + '<div class="m"><span>'+escH(r.p.de)+'</span><span>'+escH(r.p.nombre)+'</span></div></div>';
+            + '<div class="m"><span>'+escH(r.p.de)+'</span><span>'+kb(r.p.bytes)+'</span></div></div>';
     });
     html += '</div>';
   }
@@ -1792,6 +2244,13 @@ $("#mmigas").addEventListener("click", e=>{
 $("#mview").addEventListener("click", e=>{
   const t = e.target.closest("[data-todos]");
   if(t){ traerTodos(); return; }
+  const g = e.target.closest("[data-grupo]");
+  if(g){
+    const id = g.getAttribute("data-grupo");
+    MAN.abierto[id] = !MAN.abierto[id];
+    verIndiceManual();
+    return;
+  }
   const d = e.target.closest("[data-papel]");
   if(d) abrirPapel(d.getAttribute("data-papel"));
 });
@@ -1801,21 +2260,23 @@ let rec=null;
 // Dos cajas de dictado (hablar y solicitudes) y un solo micro: se le dice a cual
 // escribe. Antes escribia siempre en #txt, asi que el micro de solicitudes
 // habria dictado en la caja equivocada.
-function micro(idT, idB){
-  idT = idT || "#txt"; idB = idB || "#mic";
+function micro(idT, idB){ microEn($(idT||"#txt"), $(idB||"#mic")); }
+// Por elementos y no por selector: las cajas de comentar se crean solas en
+// cada sección y no tienen id, así que un selector no les vale.
+function microEn(caja, boton){
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if(!SR){ $(idT).focus(); toast("Usa el micro de tu teclado"); return; }
+  if(!SR){ caja.focus(); toast("Usa el micro de tu teclado"); return; }
   if(rec){ rec.stop(); return; }
   rec = new SR(); rec.lang="es-ES"; rec.continuous=true; rec.interimResults=true;
-  const base = $(idT).value ? $(idT).value+" " : "";
+  const base = caja.value ? caja.value+" " : "";
   rec.onresult = ev=>{
     let t="";
     for(let i=ev.resultIndex;i<ev.results.length;i++) t += ev.results[i][0].transcript;
-    $(idT).value = base + t;
+    caja.value = base + t;
   };
-  rec.onend = ()=>{ rec=null; $(idB).classList.remove("on"); };
-  rec.onerror = ()=>{ rec=null; $(idB).classList.remove("on"); toast("Usa el micro de tu teclado", true); };
-  rec.start(); $(idB).classList.add("on"); toast("Habla…");
+  rec.onend = ()=>{ rec=null; boton.classList.remove("on"); };
+  rec.onerror = ()=>{ rec=null; boton.classList.remove("on"); toast("Usa el micro de tu teclado", true); };
+  rec.start(); boton.classList.add("on"); toast("Habla…");
 }
 
 /* ═══ 8 · AJUSTES ═════════════════════════════════════════════ */
@@ -1940,9 +2401,20 @@ function ejemplo(){
     {nombre:"Any Task", tipo:"puntual", estado:"va", que:"Construyendo La Oficina", desde:new Date(Date.now()-6*60000).toISOString()},
     {nombre:"Auditoría General", tipo:"puntual", estado:"parado", que:"Sin tarea abierta", desde:new Date(Date.now()-19*3600000).toISOString()}
   ], espera_de_ti:[
-    {texto:"Entrar con Google en Proyecto Flutter", pasos:[
+    {texto:"Entrar con Google en Proyecto Flutter",
+     quien:"Proyecto Flutter", desde:new Date(Date.now()-3*86400000).toISOString(),
+     por_que:"Sin esto, nadie puede entrar en la app con su cuenta de Google, "+
+             "y esa es la única forma de entrar que hay hecha. La app está terminada "+
+             "pero no se puede usar ni enseñar a nadie hasta que esto esté.",
+     por_que_yo:"Hay que meter TU contraseña de Google en una pantalla de Google. "+
+                "Un agente no tiene tu contraseña y no debe tenerla nunca.",
+     pasos:[
       "1. Doble clic en el robot ENTRAR CON GOOGLE del Escritorio: entra con tu cuenta y él hace lo demás solo",
-      "2. En console.firebase.google.com, proyecto all-apps-danis, busca la lista de formas de entrar y enciende la fila de Google"]}],
+      "2. En console.firebase.google.com, proyecto all-apps-danis, busca la lista de formas de entrar y enciende la fila de Google"]},
+    {texto:"Decidir el precio de Aloud",
+     quien:"Capataz", desde:new Date(Date.now()-9*3600000).toISOString(),
+     por_que:"La ficha de la tienda no se puede terminar sin un precio, y sin ficha no se publica.",
+     por_que_yo:"Es una decisión tuya de negocio: cuánto quieres cobrar. Ningún agente la puede tomar por ti."}],
   hecho:{
     commits:[
       {donde:"Portal", texto:"La portada ya deja poner tus propias secciones", ts:new Date(Date.now()-14*60000).toISOString()},
